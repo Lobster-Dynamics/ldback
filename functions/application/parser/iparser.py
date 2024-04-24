@@ -1,5 +1,5 @@
 from typing import Any
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, TypeVar, Generic
 from io import BytesIO
 from abc import ABC, abstractmethod
 
@@ -8,16 +8,45 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class DocumentImage(BaseModel):
     model_config = ConfigDict(frozen=True)
-
     name: str = Field()
+
     data: Any = Field()
 
 
-class ParsingResult(BaseModel):
+ContentType = TypeVar("ContentType")
+
+
+class DocSection(BaseModel, Generic[ContentType]):
     model_config = ConfigDict(frozen=True)
 
-    text: List[str] = Field()
-    images: Optional[Tuple["DocumentImage"]] = Field()
+    index: int = Field()
+    content: ContentType = Field()
+
+
+class PageOfContent(BaseModel):
+    """Defines the structure of a page of content, each page of content must have
+    an array of text_sections and an array of image_sections. These image sections must
+    specify the content of the section and the index, the index of a section wether it is a text
+    section or image section, describes its position in the page as a whole. This is
+    so that we can concatenate images with texts so that the render of this structure
+    reasembles the original structure of the document that was parsed.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    text_sections: List[DocSection[str]] = Field()
+    image_sections: List[DocSection[Any]] = Field()
+
+
+class ParsingResult(BaseModel):
+    """Defines the structure of the parsing result returned by Parser classes
+    implementing the IParser interface.
+    The parsing result must contain a list of contents
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    contents: List[PageOfContent] = Field()
 
 
 class IParser(ABC):
