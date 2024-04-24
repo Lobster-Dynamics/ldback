@@ -23,8 +23,11 @@ class DocSection(BaseModel, Generic[ContentType]):
     content: ContentType = Field()
 
 
-class PageOfContent(BaseModel):
-    """Defines the structure of a page of content, each page of content must have
+class ParsingResult(BaseModel):
+    """Defines the structure of the parsing result returned by Parser classes
+    implementing the IParser interface.
+    The parsing result must contain a list of contents
+    The parsing result  must have
     an array of text_sections and an array of image_sections. These image sections must
     specify the content of the section and the index, the index of a section wether it is a text
     section or image section, describes its position in the page as a whole. This is
@@ -36,17 +39,6 @@ class PageOfContent(BaseModel):
 
     text_sections: List[DocSection[str]] = Field()
     image_sections: List[DocSection[Any]] = Field()
-
-
-class ParsingResult(BaseModel):
-    """Defines the structure of the parsing result returned by Parser classes
-    implementing the IParser interface.
-    The parsing result must contain a list of contents
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    contents: List[PageOfContent] = Field()
 
 
 class IParser(ABC):
