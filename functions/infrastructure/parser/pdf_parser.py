@@ -1,4 +1,5 @@
 from application.parser import IParser, ParsingResult
+from application.parser.iparser import DocSection
 from PyPDF2 import PdfReader
 from io import BytesIO
 
@@ -8,15 +9,15 @@ class PDFParser(IParser):
         pdf = PdfReader(file)
         
         # Initialize the text and images list
-        paragraphs = []
-        images = []
+        paragraphs = [DocSection[str]]
+        imagesAll = [DocSection[any]]
+        counter = 0
         
         # Extract text from each page
         for page in range(len(pdf.pages)):
             page_text = pdf.pages[page].extract_text()
 
             lines = page_text.split('\n')
-
             
             paragraph = ""
 
@@ -24,13 +25,15 @@ class PDFParser(IParser):
                 if line.strip() != "":
                     paragraph += " " + line.strip()
                 elif paragraph != "":
-                    paragraphs.append(paragraph.strip())
+                    paragraphs.append(DocSection[counter,paragraph.strip()])
                     paragraph = ""
+                    counter += 1
             if paragraph != "":
-                paragraphs.append(paragraph.strip())
-            
-        # TODO: Extract images from the PDF file
-        # This part is a bit more complex as it depends on the structure of your PDF file
-        # You might need to use a library like PDFMiner or PyMuPDF if PyPDF2 doesn't work
-        
-        return ParsingResult(text=paragraphs, images=None)
+                paragraphs.append(DocSection[counter,paragraph.strip()])
+                counter += 1
+
+            for image_file_object in page.images:
+                imagesAll += (DocSection(counter, image_file_object.data))
+                counter += 1
+
+        return ParsingResult(text_sections=paragraphs, image_sections=imagesAll)

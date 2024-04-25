@@ -51,7 +51,7 @@ def upload_document_handle():
     if type_file == ".pdf":
         mimetype = FileMimeType.PDF
         parse = PDFParser()
-        parsed_result = parse.parse(payload).text
+        parsed_result = parse.parse(payload)
     elif type_file == ".doc":
         mimetype = FileMimeType.DOC
     elif type_file == ".docx":
