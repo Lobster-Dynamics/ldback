@@ -8,6 +8,7 @@ Python 3.11 is needed
 
 npx firebase emulators:start --only functions
 
-# run unittests from root directory
+# run unittests from funcions directory
 
-python -m unittest
+cd functions
+python -m pytest ./test/parser/test_docx_parser.py
