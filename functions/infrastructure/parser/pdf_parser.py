@@ -34,7 +34,7 @@ class PDFParser(IParser):
                 counter += 1
 
             for image_file_object in page.images:
-                imagesAll += (DocSection(counter, image_file_object.data))
+                imagesAll += (DocSection[Any](counter, BytesIO(image_file_object.data)))
                 counter += 1
 
         return ParsingResult(text_sections=paragraphs, image_sections=imagesAll)
