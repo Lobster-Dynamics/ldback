@@ -10,13 +10,14 @@ class PDFParser(IParser):
         pdf = PdfReader(file)
         
         # Initialize the text and images list
-        paragraphs = List[DocSection[str]] = []
-        imagesAll = List[DocSection[Any]] = []
+        paragraphs: List[DocSection[str]] = []
+        imagesAll: List[DocSection[Any]] = []
         counter = 0
         
         # Extract text from each page
-        for page in range(len(pdf.pages)):
-            page_text = pdf.pages[page].extract_text()
+        for pageNum in range(len(pdf.pages)):
+            page = pdf.pages[pageNum]
+            page_text = pdf.pages[pageNum].extract_text()
 
             lines = page_text.split('\n')
             
@@ -29,12 +30,14 @@ class PDFParser(IParser):
                     paragraphs.append(DocSection[str](index = counter,content = paragraph.strip()))
                     paragraph = ""
                     counter += 1
+
             if paragraph != "":
                 paragraphs.append(DocSection[str](index = counter,content = paragraph.strip()))
                 counter += 1
 
             for image_file_object in page.images:
-                imagesAll += (DocSection[Any](counter, BytesIO(image_file_object.data)))
+                image_bytes = BytesIO(image_file_object.data)
+                imagesAll.append(DocSection[Any](index = counter, content = image_bytes))
                 counter += 1
 
         return ParsingResult(text_sections=paragraphs, image_sections=imagesAll)
