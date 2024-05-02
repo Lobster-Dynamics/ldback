@@ -18,5 +18,6 @@ python dev_app.py
 # run unittests from root directory
 
 python -m unittest
+#
 python -m pytest ./test
 
