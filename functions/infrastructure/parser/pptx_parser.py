@@ -40,4 +40,14 @@ class PPTXParser(IParser):
                             image_sections.append(DocSection[Any](index=current_index, content=image_bytes))
                             current_index += 1  
 
+        all_sections = sorted(text_sections + image_sections, key=lambda ds: ds.index)
+        print("hola")
+        # Print all sections in order
+        for section in all_sections:
+            if isinstance(section.content, str):
+                print(f"Text {section.index}: {section.content}")
+            elif isinstance(section.content, BytesIO):
+                print(f"Image {section.index}")
+                
+
         return ParsingResult(text_sections=text_sections,image_sections=image_sections)
