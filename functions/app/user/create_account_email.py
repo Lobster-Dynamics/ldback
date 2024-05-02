@@ -3,7 +3,7 @@ from firebase_admin import auth, firestore
 from firebase_admin.exceptions import FirebaseError
 import requests
 import json
-import uuid
+from uuid import uuid1
 
 from app.middleware.decorators import exclude_verify_token
 from infrastructure.firebase import FIREBASE_CONFIG
@@ -56,7 +56,7 @@ def create_account_email_handle():
     
     # Find an available root directory id
     while True:
-        root_directory_id = str(uuid.uuid4())
+        root_directory_id = str(uuid1())
         if directory_ref.document(root_directory_id).get().to_dict() is None: break
     
     # Add user into Users collection
@@ -64,14 +64,14 @@ def create_account_email_handle():
         "id": user_info.uid,
         "name": name,
         "lastname": lastname,
-        "root_directory_id": root_directory_id
+        "rootDirectoryId": root_directory_id
     })
     
     # Add new root directory for the user
     directory_ref.document(root_directory_id).set({
         "id": root_directory_id,
-        "name": "Root Directory",
-        "owner_id": auth_response["localId"]
+        "name": "Mi Unidad",
+        "ownerId": auth_response["localId"]
     })
 
     auth_info = {
@@ -79,7 +79,7 @@ def create_account_email_handle():
         "refreshToken": auth_response["refreshToken"],
         "name": name,
         "lastname": lastname,
-        "rootDirectoryId": root_directory_id
+        "root_directory_id": root_directory_id
     }
     return jsonify(auth_info)
     

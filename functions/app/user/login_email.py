@@ -43,6 +43,6 @@ def login_email_handle():
         "refreshToken": auth_response["refreshToken"],
         "name": user_info["name"],
         "lastname": user_info["lastname"],
-        "rootDirectoryId": user_info["root_directory_id"],
+        "root_directory_id": user_info["rootDirectoryId"],
     }
     return jsonify(auth_info)

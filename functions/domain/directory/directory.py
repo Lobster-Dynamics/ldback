@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ContainedItemType(Enum):
+class ContainedItemType(str, Enum):
     DIRECTORY = "DIRECTORY"
     DOCUMENT = "DOCUMENT"
 
@@ -22,5 +22,5 @@ class Directory(BaseModel):
 
     id: UUID = Field()
     name: str = Field()
-    owner_id: UUID = Field(alias="ownerId")
+    owner_id: str = Field(alias="ownerId")
     contained_items: List[ContainedItem] = Field(alias="containedItems")
