@@ -6,6 +6,7 @@ Python 3.11 is needed
 
 python -m venv
 pip install -r .\requirements.txt
+pip freeze > .\requirements.txt
 
 # start development instance
 
