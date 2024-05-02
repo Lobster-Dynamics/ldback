@@ -6,7 +6,7 @@ class User(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    id: UUID = Field(frozen=True)
+    id: str = Field(frozen=True)
     name: str = Field(min_length=4, max_length=15)
     lastname: str = Field(min_length=4, max_length=15)
     email: EmailStr = Field()

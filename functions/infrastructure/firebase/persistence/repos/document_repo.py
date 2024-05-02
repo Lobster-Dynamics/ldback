@@ -9,6 +9,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
     def __init__(self):
         self.db = firestore.client()
         self.collection = self.db.collection("Documents")
+        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
 
     def add(self, item: Document):
         # Se serializa todo el documento
@@ -71,11 +72,9 @@ class FirebaseDocumentRepo(IDocumentRepo):
         # Se serializa todo el documento
         result = doc.to_dict()
 
-        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
-
         subcollections_data = {}
 
-        for subcollection in subcollections:
+        for subcollection in self.subcollections:
             subcollection_ref = doc_ref.collection(subcollection)
             subdocs = subcollection_ref.stream()
 
@@ -132,8 +131,16 @@ class FirebaseDocumentRepo(IDocumentRepo):
         except Exception as e:
             print(f"Error deleting document {id}: {e}")
             
-            
+    def get_reduced(self, id: str):
+        doc_ref = self.collection.document(id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            return None
+        
+        result = doc.to_dict()
+        for subcollection in self.subcollections:
+            result[subcollection[0].lower() + subcollection[1:]] = None
+        
+        return Document(**result)
 
-            
-        
-        

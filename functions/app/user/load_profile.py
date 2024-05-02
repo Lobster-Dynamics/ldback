@@ -18,5 +18,5 @@ def load_profile_handle():
         "uid": token["uid"],
         "name": user_info["name"],
         "lastname": user_info["lastname"],
-        "rootDirectoryId":  user_info["root_directory_id"],
+        "root_directory_id":  user_info["rootDirectoryId"],
     }
