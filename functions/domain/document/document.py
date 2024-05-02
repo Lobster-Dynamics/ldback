@@ -17,6 +17,12 @@ class UserWithAccessData(BaseModel):
     user_id: str = Field(alias="userId")
     privilege_level: UserPrivilegeLevelOnDocument = Field(alias="privilegeLevel")
 
+class WordCloud(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    text: str = Field()
+    value: int = Field()
+
 
 class AuthorData(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
