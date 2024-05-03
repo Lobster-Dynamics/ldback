@@ -1,7 +1,10 @@
 from domain.document import Document
+from domain.document.document import ParsedLLMInput
 from domain.document.repo import IDocumentRepo
 from firebase_admin import firestore
+from firebase_admin import storage
 from flask import jsonify
+from datetime import datetime, timedelta
 
 
 class FirebaseDocumentRepo(IDocumentRepo):
@@ -10,6 +13,16 @@ class FirebaseDocumentRepo(IDocumentRepo):
         self.db = firestore.client()
         self.collection = self.db.collection("Documents")
         self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
+
+    def get_public_url(bucket_name, file_path):
+
+        """Generate a signed URL for public access."""
+        bucket = storage.bucket(bucket_name)
+        blob = bucket.blob(file_path)
+
+        expiration_time = timedelta(seconds=86400)
+
+        return blob.generate_signed_url(expiration=expiration_time)
 
     def add(self, item: Document):
         # Se serializa todo el documento
@@ -85,10 +98,26 @@ class FirebaseDocumentRepo(IDocumentRepo):
             subcollections_data[subcollection] = [
                 subdoc.to_dict() for subdoc in subdocs
             ]
+        parsed_input = subcollections_data["ParsedLLMInput"]
+        for i,item in enumerate(parsed_input[0]["content"]):
+            if item.startswith("gs://"):
+                path_parts = item.split("gs://")[1].split("/")
+                bucket_name = path_parts[0]
+                file_path = "/".join(path_parts[1:])
+                public_url = FirebaseDocumentRepo.get_public_url(bucket_name, file_path)
+                parsed_input[0]["content"][i]=public_url 
+        
+        print(parsed_input[0]["content"])
+                
+        result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
 
-        result["parsedLLMInput"] = subcollections_data["ParsedLLMInput"][0]["content"]
-        result["summary"] = subcollections_data["Summary"][0]
-        result["keyConcepts"] = subcollections_data["KeyConcepts"]
+        #result["summary"] = subcollections_data["Summary"][0]
+        #result["keyConcepts"] = subcollections_data["KeyConcepts"]
+
+        result["summary"] = None 
+        result["keyConcepts"] = None 
+
+
         return Document(**result)
     
     def rename(self, id: str, new_name: str):

@@ -76,7 +76,7 @@ class DocumentImage(BaseModel):
 class ParsedLLMInput(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
     content: List[str] = Field()
-    image_sections: Optional[List[DocumentImage]] = Field(alias="imageSections")
+    image_sections: Optional[List[DocumentImage]] = Field(None,alias="imageSections")
 
 
 class Document(BaseModel):
