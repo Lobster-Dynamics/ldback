@@ -31,9 +31,12 @@ class TextAnalyzer:
         # Initialize the language detector
         DetectorFactory.seed = 0  # Ensures reproducible results with `langdetect`
 
-        # print(text)
-        whole_text = " ".join(text)
-        # print(whole_text)
+        real_text = text.content
+
+        for item in real_text:
+            if item.startswith("https://"):
+                real_text.remove(item)
+        whole_text = " ".join(real_text)
         
         # print(len(whole_text))
         # keywords = kw_extractor.extract_keywords(whole_text)
