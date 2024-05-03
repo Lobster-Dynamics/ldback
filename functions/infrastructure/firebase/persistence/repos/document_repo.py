@@ -19,8 +19,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
             "summary",
             "keyConcepts",
             "relationships",
-            "parsedLLMInput",
-        }
+            "parsedLLMInput", }
 
         # Se remueven las colecciones
         main_document_dict = {
@@ -40,7 +39,11 @@ class FirebaseDocumentRepo(IDocumentRepo):
         # Se maneja 'parsed_llm_input' como una colección separada, si es necesario
         if item.parsed_llm_input is not None:
             parsed_input_ref = doc_ref.collection("ParsedLLMInput").document()
-            parsed_input_ref.set({"content": item.parsed_llm_input})
+            parsed_input_ref.set({"content": item.parsed_llm_input.content})
+            if item.parsed_llm_input.image_sections is not None:
+                for image in item.parsed_llm_input.image_sections:
+                    image_ref = parsed_input_ref.collection("ImageSections").document(image.location)
+                    image_ref.set({"location": image.location, "url": image.url})
 
         # Se maneja 'summary' como una subcolección
         if item.summary:

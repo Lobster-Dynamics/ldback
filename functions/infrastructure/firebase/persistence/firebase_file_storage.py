@@ -43,7 +43,8 @@ class FirebaseFileStorage(IFileStorage):
         )
         # final_file is ensured to be at the beggining of the stream
         final_file = BytesIO(file.getbuffer())
-        self.bucket.blob(document_name).upload_from_file(final_file, num_retries=2)
+        blob = self.bucket.blob(document_name)
+        blob.upload_from_file(final_file, content_type=mimetype.value, num_retries=2)
         return f"gs://{self.bucket_name}/{document_name}"
 
     def get(self, file_url: str) -> Tuple[BytesIO, FileMimeType]:
