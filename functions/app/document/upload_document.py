@@ -82,12 +82,13 @@ def upload_document_handle():
 
     # Genera el insight
 
-    #text_insight_extractor = OpenAITextInsightExtractor(os.environ["OPENAI_API_KEY"])
-    #text_insight = text_insight_extractor.extract_insight("\n".join(parsed_result))
-    #key_concepts = [
-    #    KeyConcept(id=str(uuid.uuid1()), name=keyc, description=keyc, relationships=[])
-    #    for keyc in text_insight.key_concepts
-    #]
+    text_insight_extractor = OpenAITextInsightExtractor(os.environ["OPENAI_API_KEY"])
+    # Corregir esto para que sea mas eficiente
+    text_insight = text_insight_extractor.extract_insight("\n".join(text.content for text in parsed_result.text_sections))
+    key_concepts = [
+        KeyConcept(id=str(uuid.uuid1()), name=keyc, description=keyc, relationships=[])
+        for keyc in text_insight.key_concepts
+    ]
 
     # Se agrega el archivo
     url = storage.add(payload, mimetype)
@@ -104,8 +105,8 @@ def upload_document_handle():
         parsedLLMInput=pll,
         usersWithAccess=[],
         biblioGraficInfo=None,  # Error, esto no funciona con docx asi que esta desactivado
-        summary=None,
-        keyConcepts=None,
+        summary=text_insight.summary,
+        keyConcepts=key_concepts,
         relationships=[],
     )
 

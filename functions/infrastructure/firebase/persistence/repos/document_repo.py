@@ -111,12 +111,8 @@ class FirebaseDocumentRepo(IDocumentRepo):
                 
         result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
 
-        #result["summary"] = subcollections_data["Summary"][0]
-        #result["keyConcepts"] = subcollections_data["KeyConcepts"]
-
-        result["summary"] = None 
-        result["keyConcepts"] = None 
-
+        result["summary"] = subcollections_data["Summary"][0]
+        result["keyConcepts"] = subcollections_data["KeyConcepts"]
 
         return Document(**result)
     
