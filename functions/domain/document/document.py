@@ -68,6 +68,16 @@ class Relationship(BaseModel):
     child_concept_id: str = Field(alias="childConceptId")
     description: str = Field()
 
+class DocumentImage(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    location: str = Field()
+    url: str = Field()
+
+class ParsedLLMInput(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    content: List[str] = Field()
+    image_sections: Optional[List[DocumentImage]] = Field(alias="imageSections")
+
 
 class Document(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -76,7 +86,7 @@ class Document(BaseModel):
     id_raw_doc: str = Field(alias="idRawDoc")
     name: str = Field(alias="name")
     extension: str = Field(alias="extension")
-    parsed_llm_input: Optional[List[str]] = Field(alias="parsedLLMInput")
+    parsed_llm_input: ParsedLLMInput = Field(alias="parsedLLMInput")
     users_with_access: List[UserWithAccessData] = Field(alias="usersWithAccess")
     bibliographic_info: Optional[BiblioGraphicInfo] = Field(
         None, alias="biblioGraficInfo"
