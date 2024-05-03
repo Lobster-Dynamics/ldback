@@ -3,10 +3,12 @@ import uuid
 from io import BytesIO
 
 from domain.document import Document
+from domain.directory.directory import ContainedItem
 from domain.document.document import KeyConcept
 from flask import jsonify, request
 from infrastructure.firebase.persistence import FileMimeType, FirebaseFileStorage
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
+from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from werkzeug.utils import secure_filename
 
 from infrastructure.parser.docx_parser import DOCXParser
@@ -30,6 +32,7 @@ def allowed_file(filename):
 def upload_document_handle():
     file = request.files["file"]
     user_id = request.form["userId"]
+    directory_id = request.form["directory_id"]
     if file.filename == "":
         return jsonify(msg="No selected file"), 400
 
@@ -94,9 +97,16 @@ def upload_document_handle():
         relationships=[],
     )
     
-    repo = FirebaseDocumentRepo()
+    doc_repo = FirebaseDocumentRepo()
+    dir_repo = FirebaseDirectoryRepo()
+    
+    contained_item = ContainedItem(
+        itemId=new_uuid,
+        itemType="DOCUMENT"
+    )
 
-    repo.add(document)
+    doc_repo.add(document)
+    dir_repo.add_contained_item(directory_id, contained_item)
 
     return jsonify(
         {

@@ -1,9 +1,10 @@
-from uuid import uuid1
+from uuid import uuid4
 
 from flask import jsonify, request
 
 from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from domain.directory import Directory
+from domain.directory.directory import ContainedItem
 
 from . import directory_blueprint
 
@@ -27,13 +28,22 @@ def create_directory_handle():
     # Reference directory repo
     repo = FirebaseDirectoryRepo()
 
+    new_uuid = uuid4()
+
     # Create a new entry in the directory collection
     directory = Directory(
-        id=uuid1(),
+        id=new_uuid,
         name=name,
         ownerId=token["user_id"],
         containedItems=[]
     )
+    
+    contained_item = ContainedItem(
+        itemId=new_uuid,
+        itemType="DIRECTORY"
+    )
+    
     repo.add(directory)
+    repo.add_contained_item(directory_id, contained_item)
     
     return jsonify(msg="Directory created successfully"), 200

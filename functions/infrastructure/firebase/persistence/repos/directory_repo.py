@@ -1,4 +1,5 @@
 from domain.directory import Directory
+from domain.directory.directory import ContainedItem
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
 
@@ -25,6 +26,19 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
 
         # Add the directory to the collection
         doc_ref.set(main_directory_dict)
+    
+    def add_contained_item(self, directory_id: str, item: ContainedItem):
+        # Reference to the subcollection 'ContainedItems' in the specified directory
+        doc_ref = self.collection.document(str(directory_id))
+        if not doc_ref.get().exists:
+            raise Exception("Directory not found")
+        item_ref = doc_ref.collection("ContainedItems").document(str(item.item_id))
+        
+        # Add the document to the subcollection
+        item_ref.set({
+            "itemId": str(item.item_id),
+            "itemType": item.item_type
+        })
     
     def get(self, id: str):
         doc_ref = self.collection.document(id)
