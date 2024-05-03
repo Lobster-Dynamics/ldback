@@ -40,17 +40,17 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             "itemType": item.item_type
         })
 
-    def delete(self, root_directory_id: str, doc_id: str):
+    def delete_contained_item(self, directory_id: str, doc_id: str):
 
         try:
             # Validate the input
-            if not root_directory_id or not doc_id:
-                raise ValueError("Both root_directory_id and doc_id must be provided.")
+            if not directory_id or not doc_id:
+                raise ValueError("Both directory_id and doc_id must be provided.")
 
             # Reference to the document to be deleted
             directory_ref = (
                 self.collection
-                    .document(root_directory_id)
+                    .document(directory_id)
                     .collection("ContainedItems")
                     .document(doc_id)
             )
@@ -58,7 +58,7 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             # Check if the document exists
             doc = directory_ref.get()
             if not doc.exists:
-                print(f"Document {doc_id} in directory {root_directory_id} does not exist.")
+                print(f"Document {doc_id} in directory {directory_id} does not exist.")
                 return None  # Exit early if the document doesn't exist
 
             # Start a batch for batch deletion
@@ -70,11 +70,11 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             # Commit the batch to apply all deletions
             batch.commit()
 
-            print(f"Successfully deleted document {doc_id} in directory {root_directory_id}.")
+            print(f"Successfully deleted document {doc_id} in directory {directory_id}.")
 
         except Exception as e:
             # Capture exceptions and print a meaningful message
-            print(f"Error deleting document {doc_id} in directory {root_directory_id}: {e}")
+            print(f"Error deleting document {doc_id} in directory {directory_id}: {e}")
             raise  # Re-raise the exception for further handling
     
     def get(self, id: str):
