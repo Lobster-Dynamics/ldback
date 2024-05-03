@@ -7,6 +7,7 @@ from domain.document.document import KeyConcept
 from flask import jsonify, request
 from infrastructure.firebase.persistence import FileMimeType, FirebaseFileStorage
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
+from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from werkzeug.utils import secure_filename
 
 from infrastructure.parser.docx_parser import DOCXParser
@@ -29,6 +30,7 @@ def allowed_file(filename):
 @document_blueprint.route("/upload_document", methods=["POST"])
 def upload_document_handle():
     file = request.files["file"]
+    directory_id = request.form["directory_id"]
     user_id = request.form["userId"]
     if file.filename == "":
         return jsonify(msg="No selected file"), 400
@@ -95,8 +97,11 @@ def upload_document_handle():
     )
     
     repo = FirebaseDocumentRepo()
+    directory = FirebaseDirectoryRepo()
 
     repo.add(document)
+
+    directory.add_item(document, str(directory_id), "DOCUMENT")
 
     return jsonify(
         {
