@@ -3,6 +3,7 @@ import uuid
 from io import BytesIO
 
 from domain.document import Document
+from domain.directory.directory import ContainedItem
 from domain.document.document import KeyConcept
 from domain.document.parse import DocumentProcessor
 from flask import jsonify, request
@@ -13,10 +14,7 @@ from werkzeug.utils import secure_filename
 
 from infrastructure.firebase.persistence import (FileMimeType,
                                                  FirebaseFileStorage)
-from infrastructure.firebase.persistence.repos.document_repo import \
-    FirebaseDocumentRepo
-from infrastructure.openai.text_insight_extractor import \
-    OpenAITextInsightExtractor
+from infrastructure.openai.text_insight_extractor import OpenAITextInsightExtractor
 from infrastructure.parser.docx_parser import DOCXParser
 from infrastructure.parser.pdf_parser import PDFParser
 from infrastructure.parser.pptx_parser import PPTXParser
@@ -36,8 +34,8 @@ def allowed_file(filename):
 @document_blueprint.route("/upload_document", methods=["POST"])
 def upload_document_handle():
     file = request.files["file"]
-    directory_id = request.form["directory_id"]
     user_id = request.form["userId"]
+    directory_id = request.form["directory_id"]
     if file.filename == "":
         return jsonify(msg="No selected file"), 400
 
@@ -109,13 +107,17 @@ def upload_document_handle():
         keyConcepts=key_concepts,
         relationships=[],
     )
+    
+    doc_repo = FirebaseDocumentRepo()
+    dir_repo = FirebaseDirectoryRepo()
+    
+    contained_item = ContainedItem(
+        itemId=new_uuid,
+        itemType="DOCUMENT"
+    )
 
-    repo = FirebaseDocumentRepo()
-    directory = FirebaseDirectoryRepo()
-
-    repo.add(document)
-
-    directory.add_item(document, str(directory_id), "DOCUMENT")
+    doc_repo.add(document)
+    dir_repo.add_contained_item(directory_id, contained_item)
 
     return jsonify(
         {

@@ -1,8 +1,7 @@
 from domain.directory import Directory
+from domain.directory.directory import ContainedItem
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
-from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
-from domain.document import Document
 
 class FirebaseDirectoryRepo(IDirectoryRepo):
     def __init__(self):
@@ -10,36 +9,36 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         self.collection = self.db.collection('Directory')
         
     def add(self, item: Directory):
-        pass
+        directory = item.model_dump()
+        directory["id"] = str(directory["id"])
 
-    def add_item(self, item: Document, root_directory_id: str, item_type: str):
-        if item_type not in {"DOCUMENT", "DIRECTORY"}:
-            raise ValueError("Invalid item_type. Must be 'DOCUMENT' or 'DIRECTORY'.")
+        fields_to_exclude_as_collections = {
+            "containedItems",
+        }
 
-        try:
-            # Ensure the root_directory_id is valid
-            if not root_directory_id:
-                raise ValueError("root_directory_id cannot be empty.")
+        main_directory_dict = {
+            key: value
+            for key, value in directory.items()
+            if key not in fields_to_exclude_as_collections
+        }
 
-            # Reference to the sub-collection 'ContainedItems' in the specified document
-            root_directory_ref = (
-                self.collection
-                    .document(root_directory_id)
-                    .collection("ContainedItems")
-                    .document(item.id)
-            )
-            
-            # Add the document to the sub-collection
-            root_directory_ref.set({
-                "itemId": item.id,
-                "itemType": item_type
-            })
+        doc_ref = self.collection.document(directory["id"])
 
-        except Exception as e:
-            # Display the actual root_directory_id in the error message
-            print(f"Error adding document to directory {root_directory_id}: {e}")
-            raise  # Re-raise the exception for further handling or debugging
-
+        # Add the directory to the collection
+        doc_ref.set(main_directory_dict)
+    
+    def add_contained_item(self, directory_id: str, item: ContainedItem):
+        # Reference to the subcollection 'ContainedItems' in the specified directory
+        doc_ref = self.collection.document(str(directory_id))
+        if not doc_ref.get().exists:
+            raise Exception("Directory not found")
+        item_ref = doc_ref.collection("ContainedItems").document(str(item.item_id))
+        
+        # Add the document to the subcollection
+        item_ref.set({
+            "itemId": str(item.item_id),
+            "itemType": item.item_type
+        })
 
     def delete(self, root_directory_id: str, doc_id: str):
 
