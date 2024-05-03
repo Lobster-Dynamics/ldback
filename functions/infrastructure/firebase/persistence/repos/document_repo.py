@@ -2,9 +2,9 @@ from domain.document import Document
 from domain.document.document import ParsedLLMInput
 from domain.document.repo import IDocumentRepo
 from firebase_admin import firestore
+from google.cloud.firestore import DocumentReference
 from firebase_admin import storage
 from datetime import datetime, timedelta
-
 
 class FirebaseDocumentRepo(IDocumentRepo):
 
@@ -106,7 +106,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
                 public_url = FirebaseDocumentRepo.get_public_url(bucket_name, file_path)
                 parsed_input[0]["content"][i]=public_url 
         
-        print(parsed_input[0]["content"])
                 
         result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
 
@@ -139,9 +138,32 @@ class FirebaseDocumentRepo(IDocumentRepo):
         try:
             # Start a batch for batch deletion
             batch = firestore.client().batch()
-
+            ids = self.get_image_ids(id)
             # Delete documents in subcollections
             for subcollection_name in subcollections:
+                if subcollection_name == "ParsedLLMInput" and len(ids) > 0:
+                    subcollection_ref = doc_ref.collection(subcollection_name)
+                    
+                    # Stream the documents in this subcollection
+                    documents_in_subcollection = subcollection_ref.stream()
+                    
+                    for doc in documents_in_subcollection:
+                        # Check if "ImageSections" subcollection exists in the current document   
+                        # If "ImageSections" subcollection exists, delete documents in it
+                        image_sections_ref = doc.reference.collection("ImageSections")
+                        images_in_subcollection = image_sections_ref.stream()
+                        
+                        for image in images_in_subcollection:
+                            batch.delete(image.reference)  # Delete the document in the subcollection
+                        
+                        # Optionally, delete the "ImageSections" subcollection document reference
+                        # You might not need this line if the subcollection is already deleted
+                        # batch.delete(image_sections_ref) 
+
+                    # Continue to next subcollection
+
+
+                    
                 subcollection_ref = doc_ref.collection(subcollection_name)
                 subdocs = subcollection_ref.stream()
 
@@ -157,6 +179,28 @@ class FirebaseDocumentRepo(IDocumentRepo):
             print(f"Successfully deleted document {id} and its subcollections.")
         except Exception as e:
             print(f"Error deleting document {id}: {e}")
+
+    def get_image_ids(self, id: str):
+        ids = []
+        doc_ref = self.collection.document(id)
+        subcollections_data = {}
+
+        for subcollection in self.subcollections:
+            subcollection_ref = doc_ref.collection(subcollection)
+            subdocs = subcollection_ref.stream()
+
+            subcollections_data[subcollection] = {}
+            subcollections_data[subcollection] = [
+                subdoc.to_dict() for subdoc in subdocs
+            ]
+        parsed_input = subcollections_data["ParsedLLMInput"]
+        for i,item in enumerate(parsed_input[0]["content"]):
+            if item.startswith("gs://"):
+                path_parts = item.split("gs://")[1].split("/")
+                file_path = "/".join(path_parts[1:])
+                ids.append(file_path) 
+        return ids
+
             
     def get_reduced(self, id: str):
         doc_ref = self.collection.document(id)

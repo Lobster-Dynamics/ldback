@@ -71,6 +71,21 @@ class FirebaseFileStorage(IFileStorage):
         except Exception as e:
             print(f"Error deleting file: {e}")
 
+    def delete_images(self, paths: list[str]):
+        for file_path in paths:
+            assert self.bucket.blob(file_path).exists()
+            try:
+                # Obtain filename from URL    
+                # Delete the blob using the filename
+                self.bucket.blob(file_path).delete()
+                
+                # print("File deleted successfully")
+            except Exception as e:
+                print(f"Error deleting file: {e}")
+            
+            
+        print("Images deleted succesully")
+
     @classmethod
     def create_from_firebase_config(cls, base_directory: str) -> "FirebaseFileStorage":
         return cls(

@@ -32,10 +32,13 @@ class TextAnalyzer:
         DetectorFactory.seed = 0  # Ensures reproducible results with `langdetect`
 
         real_text = text.content
+        print("Original list:", real_text)
 
-        for item in real_text:
-            if item.startswith("https://"):
-                real_text.remove(item)
+        # Create a new list excluding items that start with "https://"
+        real_text = [item for item in real_text if not item.startswith("https://")]
+
+        print("Updated list:", real_text)
+        
         whole_text = " ".join(real_text)
         
         # print(len(whole_text))
