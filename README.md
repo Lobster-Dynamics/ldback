@@ -4,7 +4,10 @@ npm install
 ```
 Python 3.11 is needed
 ```bash
-python -m venv
+.\venv\scripts\activate.ps1
+```
+```bash
+pip install -r .\requirements.txt
 ```
 pip install -r .\requirements.txt
 ```bash
