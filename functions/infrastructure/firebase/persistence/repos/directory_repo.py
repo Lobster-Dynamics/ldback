@@ -9,7 +9,7 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         self.collection = self.db.collection('Directory')
         
     def add(self, item: Directory):
-        directory = item.model_dump()
+        directory = item.model_dump(by_alias=True)
         directory["id"] = str(directory["id"])
 
         fields_to_exclude_as_collections = {

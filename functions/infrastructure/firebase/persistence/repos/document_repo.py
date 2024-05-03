@@ -3,7 +3,6 @@ from domain.document.document import ParsedLLMInput
 from domain.document.repo import IDocumentRepo
 from firebase_admin import firestore
 from firebase_admin import storage
-from flask import jsonify
 from datetime import datetime, timedelta
 
 
@@ -167,8 +166,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
             return None
         
         result = doc.to_dict()
-        for subcollection in self.subcollections:
-            result[subcollection[0].lower() + subcollection[1:]] = None
         
         return Document(**result)
 
