@@ -6,7 +6,7 @@ from .document import Document
 class IDocumentRepo(ABC):
     @abstractmethod
     def add(self, item: Document): ...
-        
+
     @abstractmethod
     def get(self, id: str) -> Document: ...
 
