@@ -7,8 +7,8 @@ from infrastructure.firebase.persistence.repos.user_repo import FirebaseUserRepo
 from . import directory_blueprint
 
 
-@directory_blueprint.route('/get_directory/<id>', methods=['GET'])
-def get_directory_handle(id):
+@directory_blueprint.route('/get_directory/<string:id>', methods=['GET'])
+def get_directory_handle(id: str):
     token = request.token
     
     # TODO: Return path to the directory
