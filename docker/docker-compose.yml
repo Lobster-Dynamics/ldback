@@ -37,4 +37,6 @@ services:
         required: true
     environment:
       AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 # create service for emulator of firebase services
