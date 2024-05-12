@@ -28,14 +28,15 @@ class FirebaseFileStorage(IFileStorage):
 
         # check that url is valid for this bucket
         assert parts[0] == "gs:"
-        assert parts[3] == self.bucket_name
-        assert parts[4] == self.base_directory
+        assert parts[2] == self.bucket_name
+        assert parts[3] == self.base_directory
 
-        return parts[5]
+        return parts[4]
 
     def _file_exists(self, file_url: str) -> bool:
         filename = self._get_filename_from_url(file_url)
-        return self.bucket.blob(filename).exists()
+        blob_path = f"{self.base_directory}/{filename}"
+        return self.bucket.blob(blob_path).exists()
 
     def add(self, file: BytesIO, mimetype: FileMimeType) -> str:
         document_name = (
@@ -58,8 +59,32 @@ class FirebaseFileStorage(IFileStorage):
 
     def delete(self, file_url: str):
         assert self._file_exists(file_url)
-        filename = self._get_filename_from_url(file_url)
-        self.bucket.blob(filename).delete()
+        try:
+            # Obtain filename from URL
+            filename = self._get_filename_from_url(file_url)
+            
+            blob_path = f"{self.base_directory}/{filename}"
+            # Delete the blob using the filename
+            self.bucket.blob(blob_path).delete()
+            
+            print("File deleted successfully")
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+
+    def delete_images(self, paths: list[str]):
+        for file_path in paths:
+            assert self.bucket.blob(file_path).exists()
+            try:
+                # Obtain filename from URL    
+                # Delete the blob using the filename
+                self.bucket.blob(file_path).delete()
+                
+                # print("File deleted successfully")
+            except Exception as e:
+                print(f"Error deleting file: {e}")
+            
+            
+        print("Images deleted succesully")
 
     @classmethod
     def create_from_firebase_config(cls, base_directory: str) -> "FirebaseFileStorage":

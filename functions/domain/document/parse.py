@@ -29,6 +29,6 @@ class DocumentProcessor:
                 new_uuid = uuid.uuid4()
                 doc = DocumentImage(location=str(new_uuid), url=url)
                 list_document.append(doc)
-                list_text.append(str(new_uuid))
+                list_text.append(str(url))
 
         return ParsedLLMInput(content=list_text, imageSections=list_document) 

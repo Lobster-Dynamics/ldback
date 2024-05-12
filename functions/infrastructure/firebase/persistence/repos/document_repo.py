@@ -1,14 +1,27 @@
 from domain.document import Document
+from domain.document.document import ParsedLLMInput
 from domain.document.repo import IDocumentRepo
 from firebase_admin import firestore
-from flask import jsonify
-
+from google.cloud.firestore import DocumentReference
+from firebase_admin import storage
+from datetime import datetime, timedelta
 
 class FirebaseDocumentRepo(IDocumentRepo):
 
     def __init__(self):
         self.db = firestore.client()
         self.collection = self.db.collection("Documents")
+        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
+
+    def get_public_url(bucket_name, file_path):
+
+        """Generate a signed URL for public access."""
+        bucket = storage.bucket(bucket_name)
+        blob = bucket.blob(file_path)
+
+        expiration_time = timedelta(seconds=86400)
+
+        return blob.generate_signed_url(expiration=expiration_time)
 
     def add(self, item: Document):
         # Se serializa todo el documento
@@ -74,11 +87,9 @@ class FirebaseDocumentRepo(IDocumentRepo):
         # Se serializa todo el documento
         result = doc.to_dict()
 
-        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
-
         subcollections_data = {}
 
-        for subcollection in subcollections:
+        for subcollection in self.subcollections:
             subcollection_ref = doc_ref.collection(subcollection)
             subdocs = subcollection_ref.stream()
 
@@ -86,11 +97,119 @@ class FirebaseDocumentRepo(IDocumentRepo):
             subcollections_data[subcollection] = [
                 subdoc.to_dict() for subdoc in subdocs
             ]
+        parsed_input = subcollections_data["ParsedLLMInput"]
+        for i,item in enumerate(parsed_input[0]["content"]):
+            if item.startswith("gs://"):
+                path_parts = item.split("gs://")[1].split("/")
+                bucket_name = path_parts[0]
+                file_path = "/".join(path_parts[1:])
+                public_url = FirebaseDocumentRepo.get_public_url(bucket_name, file_path)
+                parsed_input[0]["content"][i]=public_url 
+        
+                
+        result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
 
-        result["parsedLLMInput"] = subcollections_data["ParsedLLMInput"][0]["content"]
         result["summary"] = subcollections_data["Summary"][0]
         result["keyConcepts"] = subcollections_data["KeyConcepts"]
+
         return Document(**result)
+    
+    def rename(self, id: str, new_name: str):
+        doc_ref = self.collection.document(id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return None
+        doc_ref.update({"name": new_name})
+        print(f"Document renamed succesfully: {new_name}")
 
     def update(self, item: Document):
         pass
+
+    def delete(self, id: str):
+
+        doc_ref = self.collection.document(id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return None
+
+        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
+
+
+        try:
+            # Start a batch for batch deletion
+            batch = firestore.client().batch()
+            ids = self.get_image_ids(id)
+            # Delete documents in subcollections
+            for subcollection_name in subcollections:
+                if subcollection_name == "ParsedLLMInput" and len(ids) > 0:
+                    subcollection_ref = doc_ref.collection(subcollection_name)
+                    
+                    # Stream the documents in this subcollection
+                    documents_in_subcollection = subcollection_ref.stream()
+                    
+                    for doc in documents_in_subcollection:
+                        # Check if "ImageSections" subcollection exists in the current document   
+                        # If "ImageSections" subcollection exists, delete documents in it
+                        image_sections_ref = doc.reference.collection("ImageSections")
+                        images_in_subcollection = image_sections_ref.stream()
+                        
+                        for image in images_in_subcollection:
+                            batch.delete(image.reference)  # Delete the document in the subcollection
+                        
+                        # Optionally, delete the "ImageSections" subcollection document reference
+                        # You might not need this line if the subcollection is already deleted
+                        # batch.delete(image_sections_ref) 
+
+                    # Continue to next subcollection
+
+
+                    
+                subcollection_ref = doc_ref.collection(subcollection_name)
+                subdocs = subcollection_ref.stream()
+
+                for subdoc in subdocs:
+                    batch.delete(subdoc.reference)  # Add to batch
+
+            # Delete the parent document
+            batch.delete(doc_ref)  # Add to batch
+
+            # Commit the batch to apply all deletions
+            batch.commit()
+
+            print(f"Successfully deleted document {id} and its subcollections.")
+        except Exception as e:
+            print(f"Error deleting document {id}: {e}")
+
+    def get_image_ids(self, id: str):
+        ids = []
+        doc_ref = self.collection.document(id)
+        subcollections_data = {}
+
+        for subcollection in self.subcollections:
+            subcollection_ref = doc_ref.collection(subcollection)
+            subdocs = subcollection_ref.stream()
+
+            subcollections_data[subcollection] = {}
+            subcollections_data[subcollection] = [
+                subdoc.to_dict() for subdoc in subdocs
+            ]
+        parsed_input = subcollections_data["ParsedLLMInput"]
+        for i,item in enumerate(parsed_input[0]["content"]):
+            if item.startswith("gs://"):
+                path_parts = item.split("gs://")[1].split("/")
+                file_path = "/".join(path_parts[1:])
+                ids.append(file_path) 
+        return ids
+
+            
+    def get_reduced(self, id: str):
+        doc_ref = self.collection.document(id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            return None
+        
+        result = doc.to_dict()
+        
+        return Document(**result)
+

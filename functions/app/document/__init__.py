@@ -6,3 +6,6 @@ document_blueprint = Blueprint("document_blueprint", __name__)
 from .upload_document import *
 from .get_document import *
 from .get_documents import *
+from .delete_document import *
+from .rename_document import *
+from .generate_word_cloud import *

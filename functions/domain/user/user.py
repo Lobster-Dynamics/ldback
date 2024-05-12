@@ -6,19 +6,21 @@ class User(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    id: UUID = Field(frozen=True)
-    username: str = Field(min_length=5, max_length=30)
+    id: str = Field(frozen=True)
+    name: str = Field(min_length=4, max_length=15)
+    lastname: str = Field(min_length=4, max_length=15)
     email: EmailStr = Field()
     password: str = Field()
     root_directory_id: UUID = Field(alias="rootDirectoryId")
 
     @classmethod
     def create_new(
-        cls, username: str, email: EmailStr, password: str, root_directory_id: UUID
+        cls, name: str, lastname:str, email: EmailStr, password: str, root_directory_id: UUID
     ) -> "User":
         return cls(
             id=uuid1(),
-            username=username,
+            name=name,
+            lastname=lastname,
             email=email,
             password=password,
             rootDirectoryId=root_directory_id,

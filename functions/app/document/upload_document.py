@@ -3,15 +3,18 @@ import uuid
 from io import BytesIO
 
 from domain.document import Document
+from domain.directory.directory import ContainedItem
 from domain.document.document import KeyConcept
 from domain.document.parse import DocumentProcessor
 from flask import jsonify, request
+from infrastructure.firebase.persistence import FileMimeType, FirebaseFileStorage
+from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
+from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
+from werkzeug.utils import secure_filename
+
 from infrastructure.firebase.persistence import (FileMimeType,
                                                  FirebaseFileStorage)
-from infrastructure.firebase.persistence.repos.document_repo import \
-    FirebaseDocumentRepo
-from infrastructure.openai.text_insight_extractor import \
-    OpenAITextInsightExtractor
+from infrastructure.openai.text_insight_extractor import OpenAITextInsightExtractor
 from infrastructure.parser.docx_parser import DOCXParser
 from infrastructure.parser.pdf_parser import PDFParser
 from infrastructure.parser.pptx_parser import PPTXParser
@@ -32,6 +35,7 @@ def allowed_file(filename):
 def upload_document_handle():
     file = request.files["file"]
     user_id = request.form["userId"]
+    directory_id = request.form["directory_id"]
     if file.filename == "":
         return jsonify(msg="No selected file"), 400
 
@@ -76,12 +80,13 @@ def upload_document_handle():
 
     # Genera el insight
 
-    #text_insight_extractor = OpenAITextInsightExtractor(os.environ["OPENAI_API_KEY"])
-    #text_insight = text_insight_extractor.extract_insight("\n".join(parsed_result))
-    #key_concepts = [
-    #    KeyConcept(id=str(uuid.uuid1()), name=keyc, description=keyc, relationships=[])
-    #    for keyc in text_insight.key_concepts
-    #]
+    text_insight_extractor = OpenAITextInsightExtractor(os.environ["OPENAI_API_KEY"])
+    # Corregir esto para que sea mas eficiente
+    text_insight = text_insight_extractor.extract_insight("\n".join(text.content for text in parsed_result.text_sections))
+    key_concepts = [
+        KeyConcept(id=str(uuid.uuid1()), name=keyc, description=keyc, relationships=[])
+        for keyc in text_insight.key_concepts
+    ]
 
     # Se agrega el archivo
     url = storage.add(payload, mimetype)
@@ -98,18 +103,25 @@ def upload_document_handle():
         parsedLLMInput=pll,
         usersWithAccess=[],
         biblioGraficInfo=None,  # Error, esto no funciona con docx asi que esta desactivado
-        summary=None,
-        keyConcepts=None,
+        summary=text_insight.summary,
+        keyConcepts=key_concepts,
         relationships=[],
     )
+    
+    doc_repo = FirebaseDocumentRepo()
+    dir_repo = FirebaseDirectoryRepo()
+    
+    contained_item = ContainedItem(
+        itemId=new_uuid,
+        itemType="DOCUMENT"
+    )
 
-    repo = FirebaseDocumentRepo()
-
-    repo.add(document)
+    doc_repo.add(document)
+    dir_repo.add_contained_item(directory_id, contained_item)
 
     return jsonify(
         {
-            "message": "File uploaded successfully",
+            "msg": "File uploaded successfully",
             "userId": user_id,
             "url": url,
             "docId": str(new_uuid),

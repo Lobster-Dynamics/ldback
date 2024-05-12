@@ -17,6 +17,12 @@ class UserWithAccessData(BaseModel):
     user_id: str = Field(alias="userId")
     privilege_level: UserPrivilegeLevelOnDocument = Field(alias="privilegeLevel")
 
+class WordCloud(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    text: str = Field()
+    value: int = Field()
+
 
 class AuthorData(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -70,7 +76,7 @@ class DocumentImage(BaseModel):
 class ParsedLLMInput(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
     content: List[str] = Field()
-    image_sections: Optional[List[DocumentImage]] = Field(alias="imageSections")
+    image_sections: Optional[List[DocumentImage]] = Field(None,alias="imageSections")
 
 
 class Document(BaseModel):
@@ -80,7 +86,7 @@ class Document(BaseModel):
     id_raw_doc: str = Field(alias="idRawDoc")
     name: str = Field(alias="name")
     extension: str = Field(alias="extension")
-    parsed_llm_input: ParsedLLMInput = Field(alias="parsedLLMInput")
+    parsed_llm_input: ParsedLLMInput = Field(None,alias="parsedLLMInput")
     users_with_access: List[UserWithAccessData] = Field(alias="usersWithAccess")
     bibliographic_info: Optional[BiblioGraphicInfo] = Field(
         None, alias="biblioGraficInfo"
