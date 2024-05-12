@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, request
 
 from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
@@ -9,6 +9,8 @@ from . import directory_blueprint
 
 @directory_blueprint.route('/get_directory/<id>', methods=['GET'])
 def get_directory_handle(id):
+    token = request.token
+    
     # TODO: Return path to the directory
     # Reference to directory & document repo
     dir_repo = FirebaseDirectoryRepo()
@@ -20,6 +22,9 @@ def get_directory_handle(id):
     
     if not directory:
         return jsonify(msg="Directory not found"), 400
+    
+    if not directory.owner_id == token["uid"]:
+        return jsonify(msg="Not allowed to view this directory"), 403
     
     directory = directory.model_dump()
     owner_ids: set = {directory["owner_id"]}

@@ -27,6 +27,16 @@ def create_directory_handle():
     
     # Reference directory repo
     repo = FirebaseDirectoryRepo()
+    
+    # Check if the directory exists and the user is the owner
+    directory = repo.get(directory_id)
+    
+    if not directory:
+        return jsonify(msg="Directory not found"), 400
+    
+    if not directory.owner_id == token["uid"]:
+        return jsonify(msg="Not allowed to modify this directory"), 403
+    
 
     new_uuid = uuid4()
 

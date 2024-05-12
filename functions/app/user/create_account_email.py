@@ -14,8 +14,9 @@ from . import user_blueprint
 @user_blueprint.route("/create_account_email", methods=["POST"])
 @exclude_verify_token
 def create_account_email_handle():
-    data = request.get_json()
-    if not data:
+    try:
+        data = request.get_json()
+    except Exception:
         return jsonify(msg=f"Email, Password, Name and Lastname must be set"), 400
 
     email: str
