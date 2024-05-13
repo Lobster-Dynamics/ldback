@@ -18,6 +18,10 @@ services:
       AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes: 
+      - type: bind
+        source: ../functions
+        target: /api
   worker: 
     build: 
       context: ../ 
@@ -27,6 +31,10 @@ services:
         required: true
     environment:
       AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
+    volumes: 
+      - type: bind 
+        source: ../functions
+        target: /api
   notifications_server: 
     ports: 
       - "8000:8000"
@@ -40,4 +48,8 @@ services:
       AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes: 
+      - type: bind 
+        source: ../functions
+        target: /notsser
 # create service for emulator of firebase services
