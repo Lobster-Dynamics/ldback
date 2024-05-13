@@ -2,6 +2,8 @@ import os
 from io import BytesIO
 import uuid
 
+from domain.events import DocumentCreatedEvent
+
 from domain.directory.directory import ContainedItem, ContainedItemType
 
 from domain.document.document import Document, KeyConcept
@@ -17,6 +19,7 @@ from ...parser.docx_parser import DOCXParser
 from ...parser.pdf_parser import PDFParser
 from ...parser.pptx_parser import PPTXParser
 
+from ...rabbitmq.publisher import publish_event
 
 def allowed_file(filename: str) -> bool:
     allowed_extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx"}
@@ -108,3 +111,5 @@ def create_document(creator_id: str, directory_id: str,
 
     doc_repo.add(document)
     dir_repo.add_contained_item(directory_id, contained_item)
+
+    publish_event(DocumentCreatedEvent(creator_id=creator_id, document_id=str(new_uuid)))

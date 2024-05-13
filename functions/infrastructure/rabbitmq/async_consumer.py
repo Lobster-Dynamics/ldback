@@ -66,9 +66,16 @@ class PikaConsumer(object):
     def on_open_connection_callback(self, _unused_connection):
         self._connection.channel(on_open_callback=self.on_open_channel_callback)
 
+    def on_open_error_callback(self, conn, exc):
+        # this is not clean at all, I will find a way to use 
+        # awaiting times
+        self.run(self._loop)
+
     def run(self, loop):
+        self._loop = loop
         self._connection = AsyncioConnection(
             parameters=pika.URLParameters(self._amqp_url),
             on_open_callback=self.on_open_connection_callback,
+            on_open_error_callback=self.on_open_error_callback,
             custom_ioloop=loop,
         )

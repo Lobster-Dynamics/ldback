@@ -13,3 +13,8 @@ npx firebase emulators:start --only functions
 cd functions
 python -m pytest ./test/parser/test_docx_parser.py
 python -m pytest ./test/
+
+# run with docker 
+
+cd docker 
+docker compose up

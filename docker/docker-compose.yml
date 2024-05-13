@@ -1,9 +1,10 @@
 # docker compose for the setup of development environment
 services:
-  rabbity: 
-    image: rabbitmq:latest 
+  rabbity:
+    image: rabbitmq:3-management 
     ports: 
       - "5672:5672"
+      - "15672:15672"
   api: 
     ports: 
       - "5000:5000"

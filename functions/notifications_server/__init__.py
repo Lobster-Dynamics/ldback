@@ -9,7 +9,11 @@ logging.basicConfig(filename="example.log", encoding="utf-8", level=logging.INFO
 from typing import Dict, List, Annotated
 import asyncio
 
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+
+from infrastructure.firebase import FIREBASE_APP
+from firebase_admin.auth import verify_id_token
 
 from application.observer import INotifier, create_app_observer
 from infrastructure.rabbitmq.async_consumer import PikaConsumer
@@ -77,16 +81,15 @@ async def lifespan(app: FastAPI):
     consumer.run(asyncio.get_running_loop()) # type: ignore
     yield
 
- 
 app = FastAPI(lifespan=lifespan)
 
 
 @app.websocket("/notifications")
 async def websocket_endpoint(auth_token: Annotated[str, Query()], websocket: WebSocket):
-    id = auth_token
-    await websocket_manager.add_websocket(id, websocket)
+    id = verify_id_token(auth_token)["uid"] #type: ignore
+    logger.info(str(id))
+    await websocket_manager.add_websocket(id, websocket) # type: ignore
     
     # prevents the socket from closing
     while True:
         await asyncio.sleep(10)
-

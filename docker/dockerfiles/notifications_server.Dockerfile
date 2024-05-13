@@ -6,6 +6,7 @@ WORKDIR /notsser
 
 EXPOSE 8000
 
+COPY ./functions/cert ./cert
 COPY ./functions/application ./application
 COPY ./functions/domain ./domain
 COPY ./functions/infrastructure ./infrastructure
