@@ -3,6 +3,8 @@ from domain.directory.directory import ContainedItem
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
 
+from uuid import uuid4
+
 class FirebaseDirectoryRepo(IDirectoryRepo):
     def __init__(self):
         self.db = firestore.client()
@@ -94,3 +96,9 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         return Directory(**result)
     
     def update(self, item: Directory): ...
+    
+    def new_uuid(self) -> uuid4:
+        while True:
+            root_directory_id = str(uuid4())
+            if self.collection.document(root_directory_id).get().to_dict() is None: break
+        return root_directory_id

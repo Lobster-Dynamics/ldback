@@ -23,4 +23,4 @@ class Directory(BaseModel):
     id: UUID = Field()
     name: str = Field()
     owner_id: str = Field(alias="ownerId")
-    contained_items: List[ContainedItem] = Field(alias="containedItems")
+    contained_items: List[ContainedItem] = Field(None, alias="containedItems")

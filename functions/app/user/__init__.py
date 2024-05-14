@@ -7,3 +7,4 @@ from .login_email import *
 from .create_account_email import *
 from .load_profile import *
 from .refresh_token import *
+from .get_information import *

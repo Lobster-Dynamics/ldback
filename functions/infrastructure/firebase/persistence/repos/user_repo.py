@@ -17,8 +17,6 @@ class FirebaseUserRepo(IUserRepo):
             return None
 
         result = doc.to_dict()
-        result["password"] = "123456"   # TODO: remove this line
-        result["email"] = "a01284917@tec.mx" # TODO: remove this line
         return User(**result)
     
     def update(self, item: User): ...

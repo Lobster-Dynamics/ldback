@@ -32,10 +32,10 @@ def create_directory_handle():
     directory = repo.get(directory_id)
     
     if not directory:
-        return jsonify(msg="Directory not found"), 400
+        return jsonify(msg="Directory not found"), 404
     
     if not directory.owner_id == token["uid"]:
-        return jsonify(msg="Not allowed to modify this directory"), 403
+        return jsonify(msg="Not allowed to modify this directory"), 401
     
 
     new_uuid = uuid4()

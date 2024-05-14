@@ -1,11 +1,15 @@
 from flask import jsonify, request
-from firebase_admin import auth, firestore
+from pydantic import ValidationError
+from firebase_admin import auth
 from firebase_admin.exceptions import FirebaseError
 import requests
 import json
-from uuid import uuid1
 
 from app.middleware.decorators import exclude_verify_token
+from infrastructure.firebase.persistence.repos.user_repo import FirebaseUserRepo
+from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
+from domain.user import User
+from domain.directory import Directory
 from infrastructure.firebase import FIREBASE_CONFIG
 
 from . import user_blueprint
@@ -31,6 +35,28 @@ def create_account_email_handle():
     except KeyError:
         return jsonify(msg=f"Email, Password, Name and Lastname must be set"), 400
 
+    # Reference to user & directory repo
+    user_repo = FirebaseUserRepo()
+    directory_repo = FirebaseDirectoryRepo()
+
+    # Validate format of email, name and lastname
+    try:
+        user = User(
+            id="",
+            name=name,
+            lastname=lastname,
+            email=email,
+            rootDirectoryId=directory_repo.new_uuid()
+        )
+        
+        directory = Directory(
+            id=user.root_directory_id,
+            name="Mi Unidad",
+            ownerId=""
+        )
+    except ValidationError:
+        return jsonify(msg=f"Email and Lastname must be between 4 and 15 characters. Email must be valid"), 400
+
     try:
         # Create user in Firebase Auth
         user_info: auth.UserRecord = auth.create_user(email=email, password=password)
@@ -50,37 +76,17 @@ def create_account_email_handle():
     
     auth_response = json.loads(auth_response.content)
     
-    # Ref to Firestore
-    firestore_client = firestore.client()
-    users_ref = firestore_client.collection("Users")
-    directory_ref = firestore_client.collection("Directory")
-    
-    # Find an available root directory id
-    while True:
-        root_directory_id = str(uuid1())
-        if directory_ref.document(root_directory_id).get().to_dict() is None: break
-    
-    # Add user into Users collection
-    users_ref.document(user_info.uid).set({
-        "id": user_info.uid,
-        "name": name,
-        "lastname": lastname,
-        "rootDirectoryId": root_directory_id
-    })
-    
-    # Add new root directory for the user
-    directory_ref.document(root_directory_id).set({
-        "id": root_directory_id,
-        "name": "Mi Unidad",
-        "ownerId": auth_response["localId"]
-    })
+    user.id = user_info.uid
+    directory.owner_id = user_info.uid
+    user_repo.add(user)
+    directory_repo.add(directory)
 
     auth_info = {
         "token": auth_response["idToken"],
         "refreshToken": auth_response["refreshToken"],
         "name": name,
         "lastname": lastname,
-        "root_directory_id": root_directory_id
+        "root_directory_id": str(directory.id)
     }
     return jsonify(auth_info)
     

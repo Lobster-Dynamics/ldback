@@ -74,3 +74,6 @@ __pycache__/
 .pytest_cache/
 cert/
 cert/*
+
+# vscode settings
+.vscode/

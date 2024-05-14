@@ -21,10 +21,10 @@ def get_directory_handle(id: str):
     directory = dir_repo.get(str(id))
     
     if not directory:
-        return jsonify(msg="Directory not found"), 400
+        return jsonify(msg="Directory not found"), 404
     
     if not directory.owner_id == token["uid"]:
-        return jsonify(msg="Not allowed to view this directory"), 403
+        return jsonify(msg="Not allowed to view this directory"), 401
     
     directory = directory.model_dump()
     owner_ids: set = {directory["owner_id"]}
