@@ -63,7 +63,7 @@ def create_account_email_handle():
     except ValueError:
         return jsonify(msg=f"Invalid Email or Password"), 400
     except FirebaseError:
-        return jsonify(msg=f"An error ocurred while creating the user."), 400
+        return jsonify(msg=f"An error ocurred while creating the user."), 500
     
     payload = {"email": email, "password": password, "returnSecureToken": True}
     auth_response = requests.post(
