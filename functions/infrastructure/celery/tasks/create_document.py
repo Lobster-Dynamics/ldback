@@ -1,3 +1,4 @@
+import math
 import os
 from io import BytesIO
 import uuid
@@ -20,6 +21,9 @@ from ...parser.pdf_parser import PDFParser
 from ...parser.pptx_parser import PPTXParser
 
 from ...rabbitmq.publisher import publish_event
+
+from ...vector_store.vector_store import VectorStore
+
 
 def allowed_file(filename: str) -> bool:
     allowed_extensions = {".pdf", ".doc", ".docx", ".ppt", ".pptx"}
@@ -70,6 +74,20 @@ def create_document(creator_id: str, directory_id: str,
 
     parse_processor = DocumentProcessor()
     pll = parse_processor.from_sections(parsed_result) #type: ignore
+
+    # chunk pll and insert chunks into vector store
+    # after that use it for insight extraction
+    CHAR_CHUNK_SIZE = int(os.environ["CHAR_CHUNK_SIZE"])
+
+    text_body = ""
+    for text in pll.content:
+        text_body += text + "\n"
+    
+    n_chunks = math.ceil(len(text_body) / CHAR_CHUNK_SIZE)
+    chunks = [text_body[i*CHAR_CHUNK_SIZE:i*(CHAR_CHUNK_SIZE+1)] for i in range(n_chunks)]
+    
+
+    # create vector store and insert all the chunks
 
     # Genera el insight
 

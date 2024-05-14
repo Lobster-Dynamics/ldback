@@ -3,7 +3,7 @@ from typing import List
 from pydantic import BaseModel, ConfigDict, Field
 
 from .document import BiblioGraphicInfo, Summary
-
+from .ivector_store import IVectorStore
 
 class TextInsight(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -16,4 +16,4 @@ class TextInsight(BaseModel):
 class ITextInsightExtractor(ABC):
 
     @abstractmethod
-    def extract_insight(self, text_body: str) -> TextInsight: ...
+    def extract_insight(self, document_id: str, text_chunks: List[str], text_vector_store: IVectorStore) -> TextInsight: ...

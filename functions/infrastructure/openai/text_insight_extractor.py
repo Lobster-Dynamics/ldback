@@ -4,6 +4,7 @@ import os
 
 from openai import OpenAI
 from domain.document.document import SummarySection
+from domain.document.ivector_store import IVectorStore
 from domain.document.itext_insight_extractor import (
     ITextInsightExtractor,
     TextInsight,
@@ -13,10 +14,11 @@ from domain.document.itext_insight_extractor import (
 
 
 class OpenAITextInsightExtractor(ITextInsightExtractor):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, vector_store: IVectorStore):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
         self.model = "gpt-3.5-turbo"
+        self._vector_store = vector_store
 
     def _get_response(self, prompt: str) -> str:
         completion = self.client.chat.completions.create(
@@ -43,12 +45,23 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         except json.decoder.JSONDecodeError as inst:
             raise BaseException("OPENAI MODEL RETURN NON JSON STRING")
 
-    def _extract_bibliographic_info(self, text_body: str) -> BiblioGraphicInfo:
+    def _extract_bibliographic_info(self, document_id: str, vector_store: IVectorStore) -> BiblioGraphicInfo:
         bibliographic_info_json_schema = json.dumps(
             BiblioGraphicInfo.model_json_schema()
         )
+        # get most likeley chunks to get the bibliographic info
+        chunks = vector_store.get_similar_chunks(document_id, 4, "Bibliographical info, Authors. Publishment date and details. Publisher")
+        
+        # merge chunks into text
+        
+        text = ""
+        for chunk in chunks: 
+            text += chunk.text
+        
         prompt = f"""
-        Give the following text: "{text_body}" \n
+        I have a large original text and extracted the fragments that are more likeley\n
+        to contain the bibliographic info of the text\n
+        Give the following text fragments: "{text}" \n
         please, give the bibliographic info of the text in the form of a json object according to the following json schema  {bibliographic_info_json_schema}. \n
         If you cannot find any author in text please refrain from giving any authors, just set the "authors" parameter to an empty array\n.
         If you cannot find a publisher, set the parameter "publisher" to "Unknown". 
@@ -58,11 +71,36 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         raw_bibliographic_info_obj = self._get_json_response(prompt)
         return BiblioGraphicInfo.model_validate(raw_bibliographic_info_obj)
 
-    def _extract_core_concepts(self, text_body: str) -> List[str]:
+    def _extract_core_concepts_of_fragment(self, text_fragment: str) -> List[str]:
         prompt = f"""
-        Given the following text: "{text_body}" \n
+        Given the following text: "{text_fragment}" \n
         pleasae, give me a list of the core concepts within the text. Give me at least 5 core concepts and at most 10 core concepts. 
         Give me the core concepts in a json object with only one attribute "concepts" which is a list of strings which are the core concepts        
+        """
+        raw_json_reponse = self._get_json_response(prompt)
+        return raw_json_reponse["concepts"]
+
+    def _extract_core_concepts(self, text_chunks: List[str]) -> List[str]:
+        concepts = []
+        
+        # for each four chunks
+        for i in range(len(text_chunks) / 4):
+            text_fragment = ""
+            for j in range(i*4, i*4+4):
+                if j < len(text_chunks):
+                    text_fragment += text_chunks[j]
+            concepts = [
+                *concepts, 
+                *self._extract_core_concepts_of_fragment(text_fragment)
+            ]
+
+        prompt = f"""
+        Given the following list of concepts: "{str(concepts)}" \n
+        please, give me a list of the most repeated concepts in the list. If two concepts are really 
+        similar and can be taken as one, then consider them one \n
+        Give me a list of at least 5 elements and at most 10 elements of the most repeated concepts taking into consideration 
+        also similar concepts \n. 
+        Give me the core concepts in a json object with only one attribute "concepts" which is a list of strings which are the core concepts
         """
         raw_json_reponse = self._get_json_response(prompt)
         return raw_json_reponse["concepts"]
@@ -88,9 +126,9 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         raw_json_summary = self._get_json_response(prompt)
         return self._create_summary_from_json(raw_json_summary)
 
-    def extract_insight(self, text_body: str) -> TextInsight:
+    def extract_insight(self, document_id: str, text_chunks: List[str], text_vector_store: IVectorStore) -> TextInsight:
         return TextInsight(
-            bibliografic_info=self._extract_bibliographic_info(text_body),
-            key_concepts=self._extract_core_concepts(text_body),
-            summary=self._extract_summary(text_body),
+            bibliografic_info=self._extract_bibliographic_info(document_id, text_vector_store),
+            key_concepts=self._extract_core_concepts(text_chunks),
+            summary=self._extract_summary(text_chunks),
         )
