@@ -42,6 +42,18 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             "itemType": item.item_type
         })
 
+    def rename_directory(self, id: str, new_name: str):
+        try:
+            if not id:
+                raise ValueError("Directory id must be provided")
+            
+            directory_ref = self.collection.document(id)
+
+            directory_ref.update({"name":new_name})
+            print(f"Directory renamed succesfully: {new_name}")
+        except Exception as e:
+            print(f"Error renaming directory {id}: {e}")
+
     def delete_contained_item(self, directory_id: str, doc_id: str):
 
         try:
