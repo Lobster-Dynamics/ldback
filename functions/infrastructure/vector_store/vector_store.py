@@ -1,0 +1,3 @@
+from domain.document.ivector_store import IVectorStore, ResultingChunk
+
+class VectorStore(IVectorStore): ...

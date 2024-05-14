@@ -1,5 +1,6 @@
 import json
 from typing import List
+import os
 
 from openai import OpenAI
 from domain.document.document import SummarySection
