@@ -24,10 +24,19 @@ class OpenAIChatExtractor(IChatAnswers):
         This is the text you should base your answers from: {text_block}, you should answer concisely, meaning briefly and precisely, as if you were the text's author. \n
         Here is the question to answer: {text}\n
         """
-        response = self.client.completions.create(
+        response = self.client.chat.completions.create(
             model=self.model,
-            
-            prompt=whole_prompt,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert assistant chatbot meant to examinate texts and return reponses based soleley on the information contained within the texts. You answer to the questions precisely and briefly.",
+                },
+                {
+                    "role": "user",
+                    "content": whole_prompt,
+                },
+            ],
+            #prompt=whole_prompt,
             max_tokens=300,
             temperature=0
         )
