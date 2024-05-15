@@ -1,13 +1,14 @@
 import json
+import os
 import requests
 from flask import jsonify, request
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
 from . import document_blueprint
-from infrastructure.openai.chat_answers import OpenAITextInsightExtractor
+from infrastructure.openai.chat_answers import OpenAIChatExtractor
 
 @document_blueprint.route("/get_message/", methods=["POST"])
 def get_message_handle():
-    bot = OpenAITextInsightExtractor()
+    bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"])
     try:
         data = request.get_json()
     except Exception:

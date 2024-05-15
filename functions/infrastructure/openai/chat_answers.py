@@ -7,7 +7,7 @@ from domain.document.ichat_answers import IChatAnswers
 from functions.domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
 
-class OpenAITextInsightExtractor(IChatAnswers):
+class OpenAiChatExtractor(IChatAnswers):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
@@ -15,7 +15,7 @@ class OpenAITextInsightExtractor(IChatAnswers):
         self._vector_store = vector_store
     
     def _message_completion(self, document_id: str, text: str, vector_store: IVectorStore) -> str:
-        chunks = vector_store.get_similar_chunks(document_id, 4, text)
+        chunks = vector_store.get_similar_chunks(document_id, 3, text)
         text_block = ""
         for i in range(len(chunks)):
             text_block += chunks[i].text
