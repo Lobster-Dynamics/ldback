@@ -4,7 +4,7 @@ from typing import List
 from openai import OpenAI
 from domain.document.ivector_store import IVectorStore, ResultingChunk
 from domain.document.ichat_answers import IChatAnswers
-from functions.domain.document.ichat_answers import MessageContent
+from domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
 
 class OpenAIChatExtractor(IChatAnswers):
@@ -36,13 +36,15 @@ class OpenAIChatExtractor(IChatAnswers):
                     "content": whole_prompt,
                 },
             ],
-            #prompt=whole_prompt,
+            # prompt=whole_prompt,
             max_tokens=300,
             temperature=0
         )
         return response.choices[0].message.content
 
     def extract_message(self, document_id: str, text: str) -> MessageContent:
+        message=self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store)
+        print(message)
         return MessageContent(
-            message=self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store)
+            message=message
         )
