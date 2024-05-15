@@ -7,7 +7,14 @@ class FirebaseUserRepo(IUserRepo):
         self.db = firestore.client()
         self.collection = self.db.collection('Users')
 
-    def add(self, item: User): ...
+    def add(self, item: User):
+        user = item.model_dump(by_alias=True)
+        
+        updated_user= dict()
+        for key in user:
+            updated_user[key] = str(user[key])
+        doc_ref = self.collection.document(user["id"])
+        doc_ref.set(updated_user)
 
     def get(self, id: str):
         doc_ref = self.collection.document(id)
