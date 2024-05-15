@@ -2,8 +2,7 @@ from flask import Blueprint, jsonify
 from infrastructure.firebase.persistence.repos.keyconcept_repo import \
     FirebaseKeyConceptRepo
 
-document_blueprint = Blueprint("document_blueprint", __name__)
-
+from . import document_blueprint
 
 @document_blueprint.route(
     "/delete_key_concept/<document_id>/<keyconcept_id>", methods=["DELETE"]
