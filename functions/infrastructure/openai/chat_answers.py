@@ -43,5 +43,5 @@ class OpenAIChatExtractor(IChatAnswers):
 
     def extract_message(self, document_id: str, text: str) -> MessageContent:
         return MessageContent(
-            message=self._message_completion,
+            message=self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store)
         )
