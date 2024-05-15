@@ -26,16 +26,8 @@ class OpenAIChatExtractor(IChatAnswers):
         """
         response = self.client.completions.create(
             model=self.model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert assistant chatbot meant to examinate texts and return reponses based soleley on the information contained within the texts. You answer to the questions precisely and briefly.",
-                },
-                {
-                    "role": "user",
-                    "content": whole_prompt,
-                },
-            ],
+            
+            prompt=whole_prompt,
             max_tokens=300,
             temperature=0
         )
