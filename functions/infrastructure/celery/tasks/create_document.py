@@ -2,6 +2,10 @@ import math
 import os
 from io import BytesIO
 import uuid
+import logging 
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename="textbot.log", level=logging.INFO)
 
 from domain.events import DocumentCreatedEvent
 
@@ -61,7 +65,6 @@ def create_document(creator_id: str, directory_id: str,
         mimetype = FileMimeType.DOCX
         parse = DOCXParser()
         parsed_result = parse.parse(file)
-
     elif type_file == ".ppt":
         mimetype = FileMimeType.PPT
     elif type_file == ".pptx":
@@ -80,14 +83,16 @@ def create_document(creator_id: str, directory_id: str,
     # chunk pll and insert chunks into vector store
     # after that use it for insight extraction
     CHAR_CHUNK_SIZE = int(os.environ["CHAR_CHUNK_SIZE"])
-
+    
     text_body = ""
     for text in pll.content:
-        text_body += text + "\n"
-    
+        text_body += text + ""
+    text_body.replace("\t", " ")
+    text_body.replace("\n", " ")
     n_chunks = math.ceil(len(text_body) / CHAR_CHUNK_SIZE)
-    chunks = [text_body[i*CHAR_CHUNK_SIZE:i*(CHAR_CHUNK_SIZE+1)] for i in range(n_chunks)]
-    
+    chunks = [text_body[i*CHAR_CHUNK_SIZE:(i+1)*(CHAR_CHUNK_SIZE)] for i in range(n_chunks)]
+    for chunk in chunks:
+        logger.info(chunk)
 
     # create vector store and insert all the chunks
 
