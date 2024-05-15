@@ -22,7 +22,8 @@ class FirebaseKeyConceptRepo(IKeyConceptRepo):
         key_concept_collection = self.document_collection.document(document_id).collection('KeyConcepts')
         key_concept_doc = key_concept_collection.document(id)
         key_concept_doc.delete()
-        
+    
+    def get(self, id:str): ...
 
     def new_uuid(self) -> str:
         while True:
