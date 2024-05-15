@@ -126,12 +126,4 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         return docs
     
     def get_path(self, id: UUID):
-        path = []
-        
-        while id:
-            doc_ref = self.collection.document(str(id))
-            doc = doc_ref.get()
-            id = doc.to_dict().get("parentId")
-            data = {"id": doc.id, "name": doc.to_dict().get("name")}
-            path.append(data)
-        return path[::-1]
+        return [{"id": "str", "name": "root"}]
