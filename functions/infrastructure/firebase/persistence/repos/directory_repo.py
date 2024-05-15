@@ -11,16 +11,18 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         self.collection = self.db.collection('Directory')
         
     def add(self, item: Directory):
-        directory = item.model_dump(by_alias=True)
-        directory["id"] = str(directory["id"])
-        try:
-            directory["parentId"] = str(directory["parentId"])
-        except KeyError:
-            pass # No parent directory
-        
         fields_to_exclude_as_collections = {
             "containedItems",
         }
+
+        directory = item.model_dump(by_alias=True)
+        directory["id"] = str(directory["id"])
+
+        if directory["parentId"] == None:
+            fields_to_exclude_as_collections.add("parentId")
+        else:
+            directory["parentId"] = str(directory["parentId"])
+        
 
         main_directory_dict = {
             key: value
@@ -125,5 +127,13 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         
         return docs
     
-    def get_path(self, id: UUID):
-        return [{"id": "str", "name": "root"}]
+    def get_path(self, id: str):
+        path = []
+
+        while id:
+            doc_ref = self.collection.document(str(id))
+            doc = doc_ref.get()
+            id = doc.to_dict().get("parentId")
+            data = {"id": doc.id, "name": doc.to_dict().get("name")}
+            path.append(data)
+        return path[::-1]
