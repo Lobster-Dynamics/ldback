@@ -114,3 +114,9 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             root_directory_id = str(uuid4())
             if self.collection.document(root_directory_id).get().to_dict() is None: break
         return root_directory_id
+    
+    def get_all(self, id: str):
+        query = self.collection.where("ownerId", "==", id)
+        docs = query.stream()
+        
+        return docs

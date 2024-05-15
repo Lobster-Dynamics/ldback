@@ -10,3 +10,4 @@ from .delete_document import *
 from .rename_document import *
 from .generate_word_cloud import *
 from .get_message import *
+from .search_document import *

@@ -213,3 +213,8 @@ class FirebaseDocumentRepo(IDocumentRepo):
         
         return Document(**result)
 
+    def get_all(self, id: str):
+        query = self.collection.where("ownerId", "==", id)
+        docs = query.stream()
+        
+        return docs
