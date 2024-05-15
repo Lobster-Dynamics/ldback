@@ -22,7 +22,7 @@ class VectorStore(IVectorStore):
         )
         self.index.upsert(
             vectors=[
-                {"id":chunk_id, "value":response.data[0].embedding, "metadata":{"ChunkText":text}}
+                {"id":chunk_id, "values":response.data[0].embedding, "metadata":{"ChunkText":text}}
             ],
             namespace=document_id
         )
