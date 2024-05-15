@@ -35,7 +35,7 @@ def allowed_file(filename: str) -> bool:
 from .. import celery_app
 
 @celery_app.task # type: ignore
-def create_document(creator_id: str, directory_id: str, 
+def create_document(document_id: str, creator_id: str, directory_id: str, 
                     filename: str, file_bytes: bytes):
     """ Entrypoint for the task of creating a document
     Creating a document involves the following actions: 
@@ -70,7 +70,7 @@ def create_document(creator_id: str, directory_id: str,
         parsed_result = parse.parse(file)
     
     # Se crea el UUID
-    new_uuid = str(uuid.uuid4())
+    new_uuid = document_id
 
     # Se suben las fotos y se prepar el texto parseado
 
