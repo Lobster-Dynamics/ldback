@@ -9,7 +9,8 @@ class VectorStore(IVectorStore):
     def __init__(self, op_api_key: str, pc_api_key: str):
         # TODO: parametryze configuration params
         self.op = OpenAI(api_key=op_api_key)
-        self.model = "text-embedding-3-small"
+        self.model = "gpt-3.5-turbo"
+        self.pc_model = "text-embedding-3-small"
         self.pc = Pinecone(api_key=pc_api_key)
         self.index=self.pc.Index("embedding-storage")
     
@@ -18,7 +19,7 @@ class VectorStore(IVectorStore):
 
         response = self.op.embeddings.create(
             input=text,
-            model=self.model
+            model=self.pc_model
         )
         self.index.upsert(
             vectors=[
@@ -27,12 +28,16 @@ class VectorStore(IVectorStore):
             namespace=document_id
         )
         return chunk_id
+    
+    def deleteNamespace(self, document_id: str) -> str:
+        self.index.delete(delete_all=True, namespace=document_id)
+        return document_id
 
 
     def get_similar_chunks(self, document_id: str, k: int, text: str) -> List[ResultingChunk]: 
         response = self.op.embeddings.create(
             input=text,
-            model=self.model
+            model=self.pc_model
         )
         result=self.index.query(
             namespace=document_id,

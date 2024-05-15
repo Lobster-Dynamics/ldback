@@ -16,14 +16,19 @@ class IVectorStore(ABC):
     """
     
     @abstractmethod 
-    def insert(document_id: str, text: str) -> str: 
+    def insert(self, document_id: str, text: str) -> str: 
         """Embeds the text 'text' and inserts it 
         in a vector database. Returns the ID of the vector 
         for further retrieval
         """
 
     @abstractmethod
-    def get_similar_chunks(document_id: str, k: int, text: str) -> List[ResultingChunk]: 
+    def get_similar_chunks(self, document_id: str, k: int, text: str) -> List[ResultingChunk]: 
         """ Embeds the text and returns the 
         k most similar chunks to the embedded text
+        """
+    
+    abstractmethod
+    def deleteNamespace(self, document_id: str) -> str: 
+        """ Deletes the whole namespace given to it as document_id
         """

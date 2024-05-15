@@ -26,7 +26,6 @@ def test_returns_correct_type(assets_dir: str, parser: PPTXParser):
     file_bytes = _readfile(f"{assets_dir}/Actividad2PresentacionPruebasU.pptx")
     res = parser.parse(file_bytes)
     print(res)
-    raise BaseException
     assert isinstance(res, ParsingResult)
 
 
