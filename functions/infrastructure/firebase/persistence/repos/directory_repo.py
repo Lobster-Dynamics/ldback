@@ -3,7 +3,7 @@ from domain.directory.directory import ContainedItem
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
 
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 class FirebaseDirectoryRepo(IDirectoryRepo):
     def __init__(self):
@@ -13,7 +13,11 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
     def add(self, item: Directory):
         directory = item.model_dump(by_alias=True)
         directory["id"] = str(directory["id"])
-
+        try:
+            directory["parentId"] = str(directory["parentId"])
+        except KeyError:
+            pass # No parent directory
+        
         fields_to_exclude_as_collections = {
             "containedItems",
         }
@@ -120,3 +124,14 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         docs = query.stream()
         
         return docs
+    
+    def get_path(self, id: UUID):
+        path = []
+        
+        while id:
+            doc_ref = self.collection.document(str(id))
+            doc = doc_ref.get()
+            id = doc.to_dict().get("parentId")
+            data = {"id": doc.id, "name": doc.to_dict().get("name")}
+            path.append(data)
+        return path[::-1]

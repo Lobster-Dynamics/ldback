@@ -45,7 +45,8 @@ def create_directory_handle():
         id=new_uuid,
         name=name,
         ownerId=token["user_id"],
-        containedItems=[]
+        containedItems=[],
+        parentId=directory_id
     )
     
     contained_item = ContainedItem(
