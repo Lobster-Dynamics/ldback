@@ -24,7 +24,7 @@ def upload_document_handle():
         file = request.files["file"]
         user_id = request.form["userId"]
         directory_id = request.form["directory_id"]
-        new_uuid = str(uuid.uuid4())
+        document_id = str(uuid.uuid4())
 
         if file.filename == "":
             return jsonify(msg="No selected file"), 400
@@ -41,7 +41,7 @@ def upload_document_handle():
 
         # async task
         create_document.delay(
-            document_id=new_uuid,
+            document_id=document_id,
             creator_id=user_id,
             directory_id=directory_id,
             filename=filename,
@@ -53,11 +53,11 @@ def upload_document_handle():
                 {
                     "msg": "Se ha subido el documento correctamente",
                     "userId": user_id,
-                    "document_id": new_uuid,
+                    "document_id": document_id,
                 }
             ),
             200,
         )
 
     except Exception as e:
-        return jsonify(msg=f"Ocurrio un error: {str(e)}"), 500
+        return jsonify(msg=f"Ocurrio un error: {str(e)}"), 501
