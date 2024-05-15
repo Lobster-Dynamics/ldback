@@ -5,10 +5,11 @@ from flask import jsonify, request
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
 from . import document_blueprint
 from infrastructure.openai.chat_answers import OpenAIChatExtractor
+from infrastructure.vector_store.vector_store import VectorStore
 
 @document_blueprint.route("/get_message/", methods=["POST"])
 def get_message_handle():
-    bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"])
+    bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"], vector_store=VectorStore(pc_api_key=os.environ["PINECONE_API_KEY"], op_api_key=os.environ["OPENAI_API_KEY"]))
     try:
         data = request.get_json()
     except Exception:

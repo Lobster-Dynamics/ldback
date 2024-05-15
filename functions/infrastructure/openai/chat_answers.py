@@ -7,7 +7,7 @@ from domain.document.ichat_answers import IChatAnswers
 from functions.domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
 
-class OpenAiChatExtractor(IChatAnswers):
+class OpenAIChatExtractor(IChatAnswers):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
