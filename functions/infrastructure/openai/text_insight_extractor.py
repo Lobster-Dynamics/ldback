@@ -1,3 +1,4 @@
+import math
 import json
 from typing import List
 import os
@@ -14,11 +15,18 @@ from domain.document.itext_insight_extractor import (
 
 
 class OpenAITextInsightExtractor(ITextInsightExtractor):
-    def __init__(self, api_key: str, vector_store: IVectorStore):
+    def __init__(self, api_key: str):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
         self.model = "gpt-3.5-turbo"
-        self._vector_store = vector_store
+
+    def _fragment_iterator(self, chunks: List[str], k: int): 
+        for i in range(math.ceil(len(chunks) / k)):
+            text_fragment = ""
+            for j in range(i*k, i*k+k):
+                if j < len(chunks):
+                    text_fragment += chunks[j]
+            yield text_fragment
 
     def _get_response(self, prompt: str) -> str:
         completion = self.client.chat.completions.create(
@@ -84,11 +92,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         concepts = []
         
         # for each four chunks
-        for i in range(len(text_chunks) / 4):
-            text_fragment = ""
-            for j in range(i*4, i*4+4):
-                if j < len(text_chunks):
-                    text_fragment += text_chunks[j]
+        for text_fragment in self._fragment_iterator(text_chunks, 4):
             concepts = [
                 *concepts, 
                 *self._extract_core_concepts_of_fragment(text_fragment)
@@ -116,15 +120,21 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
             )
         return Summary(secctions=sections)
 
-    def _extract_summary(self, text_body: str) -> Summary:
+    def _extract_section_summary(self, text: str) -> List[dict]:
         prompt = f"""
-        Given the following text: "{text_body}" \n
+        Given the following text: "{text}" \n
         Please, give me a comprehensive yet not so extense summary of the text by sections. 
         Each section must have a "title"  attribute  and a "body" attribute. The summary must be an object containing a parameter named "sections" 
         that is an array of the sections. Give me summary in the form of the described json object.        
         """
-        raw_json_summary = self._get_json_response(prompt)
-        return self._create_summary_from_json(raw_json_summary)
+        return self._get_json_response(prompt)
+
+    def _extract_summary(self, text_chunks: List[str]) -> Summary:
+        sections = []
+        for text_fragment in self._fragment_iterator(text_chunks, 4):
+            sections = [*sections, *self._extract_section_summary(text_fragment)["sections"]]
+        
+        return self._create_summary_from_json({"sections": sections})
 
     def extract_insight(self, document_id: str, text_chunks: List[str], text_vector_store: IVectorStore) -> TextInsight:
         return TextInsight(

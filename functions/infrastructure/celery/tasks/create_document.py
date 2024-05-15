@@ -68,7 +68,9 @@ def create_document(creator_id: str, directory_id: str,
         mimetype = FileMimeType.PPTX
         parse = PPTXParser()
         parsed_result = parse.parse(file)
-
+    
+    # Se crea el UUID
+    new_uuid = str(uuid.uuid4())
 
     # Se suben las fotos y se prepar el texto parseado
 
@@ -89,11 +91,20 @@ def create_document(creator_id: str, directory_id: str,
 
     # create vector store and insert all the chunks
 
+    vector_storage = VectorStore(
+        op_api_key=os.environ["OPENAI_API_KEY"], 
+        pc_api_key=os.environ["PINECONE_API_KEY"]
+    )
+    for chunk in chunks:
+        vector_storage.insert(document_id=new_uuid, text=chunk)
+
     # Genera el insight
 
     text_insight_extractor = OpenAITextInsightExtractor(os.environ["OPENAI_API_KEY"])
+
     # Corregir esto para que sea mas eficiente
-    text_insight = text_insight_extractor.extract_insight("\n".join(text.content for text in parsed_result.text_sections)) #type: ignore
+    text_insight = text_insight_extractor.extract_insight(new_uuid, chunks, vector_storage) #type: ignore
+
     key_concepts = [
         KeyConcept(id=str(uuid.uuid1()), name=keyc, description=keyc, relationships=[])
         for keyc in text_insight.key_concepts
@@ -102,11 +113,10 @@ def create_document(creator_id: str, directory_id: str,
     # Se agrega el archivo
     url = storage.add(file, mimetype) # type: ignore
 
-    # Se crea el UUID
-    new_uuid = uuid.uuid4()
+    
 
     document = Document(
-        id=str(new_uuid),
+        id=new_uuid,
         ownerId=creator_id,
         idRawDoc=url,
         name=filename,
