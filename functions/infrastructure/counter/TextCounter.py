@@ -35,6 +35,7 @@ class TextAnalyzer:
         # print("Original list:", real_text)
 
         # Create a new list excluding items that start with "https://"
+        real_text = [item for item in real_text if not item.startswith("gs://")]
         real_text = [item for item in real_text if not item.startswith("https://")]
 
         # print("Updated list:", real_text)

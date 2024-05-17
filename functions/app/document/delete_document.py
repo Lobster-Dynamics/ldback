@@ -1,9 +1,9 @@
 from flask import jsonify
-
+import os
 from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
 from infrastructure.firebase.persistence.firebase_file_storage import FirebaseFileStorage
 from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
-
+from infrastructure.vector_store.vector_store import VectorStore
 
 from . import document_blueprint
 
@@ -15,6 +15,7 @@ def delete_document_handle(id, directory_id):
     storage = FirebaseFileStorage.create_from_firebase_config("documents")
     directory = FirebaseDirectoryRepo()
     image_storage = FirebaseFileStorage.create_from_firebase_config("images")
+    vectorstore = VectorStore(op_api_key=os.environ["OPENAI_API_KEY"], pc_api_key=os.environ["PINECONE_API_KEY"])
     # Se consigue la respuesta
     try:
         document = repo.get(str(id))
@@ -44,6 +45,12 @@ def delete_document_handle(id, directory_id):
         except Exception as e:
             print(f"Error deleting images {images} from storage: {e}")
             return jsonify({"msg": f"Error deleting images {images} from storage: {e}"}), 400
+        
+        try:
+            vectorstore.deleteNamespace(str(id))
+        except Exception as e:
+            return jsonify({"msg": f"Error deleteing vector store of document {id}"}), 400
+
         
         
             
