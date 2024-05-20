@@ -17,6 +17,12 @@ class ContainedItem(BaseModel):
     item_type: ContainedItemType = Field(alias="itemType")
     item_id: UUID = Field(alias="itemId")
 
+class DocumentToDelete(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    doc_id: str = Field()
+    directory_id: str = Field()
+
 
 class Directory(BaseModel):
     model_config = ConfigDict(validate_assignment=True)

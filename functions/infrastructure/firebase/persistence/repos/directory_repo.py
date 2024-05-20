@@ -1,5 +1,5 @@
 from domain.directory import Directory
-from domain.directory.directory import ContainedItem
+from domain.directory.directory import ContainedItem, DocumentToDelete
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
 
@@ -137,3 +137,47 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             data = {"id": doc.id, "name": doc.to_dict().get("name")}
             path.append(data)
         return path[::-1]
+    
+    def add_to_delete(self, id: str, list_docs: list[DocumentToDelete], list_dir: list[str]):
+        curr_dir = self.get(id)
+        list_dir.append(id)
+        for element in curr_dir.contained_items:
+            if element.item_type == "DIRECTORY":
+                self.add_to_delete(str(element.item_id),list_docs=list_docs, list_dir=list_dir)
+            elif element.item_type == "DOCUMENT":
+                list_docs.append(DocumentToDelete(doc_id=str(element.item_id),directory_id=id))
+
+    def delete_directory(self, id: str):
+        if not id:
+            raise ValueError("Directory_id must be provided.")
+
+        # Reference to the directory document to be deleted
+        directory_ref = self.collection.document(id)
+
+        # Reference to the subcollection "ContainedItems"
+        contained_items_ref = directory_ref.collection('ContainedItems')
+
+        # Get all documents in the "ContainedItems" subcollection
+        contained_items_docs = contained_items_ref.stream()
+
+        # Delete each document in the "ContainedItems" subcollection
+        for doc in contained_items_docs:
+            try:
+                doc.reference.delete()
+                print(f"Contained item {doc.id} in directory {id} successfully deleted.")
+            except Exception as e:
+                print(f"Error deleting contained item {doc.id} in directory {id}: {e}")
+
+        # Delete the directory document
+        try:
+            directory_ref.delete()
+            print(f"Directory with id {id} successfully deleted.")
+        except Exception as e:
+            print(f"Error deleting directory with id {id}: {e}")
+            raise
+        
+
+
+
+        
+
