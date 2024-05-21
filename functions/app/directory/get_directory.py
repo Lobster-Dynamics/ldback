@@ -58,7 +58,7 @@ def get_directory_handle(id: str):
         if owner_name:
             item["owner_name"] = owner_name
     directory["owner_name"] = owner_name_dict[directory["owner_id"]]
-    directory["path"] = dir_repo.get_path(directory["id"])
+    directory["path"] = dir_repo.get_path(str(directory["id"]))
 
     if not directory:
         return jsonify(msg="An error ocurred while getting the directory"), 400

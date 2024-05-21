@@ -1,5 +1,5 @@
 from domain.directory import Directory
-from domain.directory.directory import ContainedItem
+from domain.directory.directory import ContainedItem, DocumentToDelete
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
 
@@ -11,16 +11,18 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         self.collection = self.db.collection('Directory')
         
     def add(self, item: Directory):
-        directory = item.model_dump(by_alias=True)
-        directory["id"] = str(directory["id"])
-        try:
-            directory["parentId"] = str(directory["parentId"])
-        except KeyError:
-            pass # No parent directory
-        
         fields_to_exclude_as_collections = {
             "containedItems",
         }
+
+        directory = item.model_dump(by_alias=True)
+        directory["id"] = str(directory["id"])
+
+        if directory["parentId"] == None:
+            fields_to_exclude_as_collections.add("parentId")
+        else:
+            directory["parentId"] = str(directory["parentId"])
+        
 
         main_directory_dict = {
             key: value
@@ -125,5 +127,57 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         
         return docs
     
-    def get_path(self, id: UUID):
-        return [{"id": "str", "name": "root"}]
+    def get_path(self, id: str):
+        path = []
+
+        while id:
+            doc_ref = self.collection.document(str(id))
+            doc = doc_ref.get()
+            id = doc.to_dict().get("parentId")
+            data = {"id": doc.id, "name": doc.to_dict().get("name")}
+            path.append(data)
+        return path[::-1]
+    
+    def add_to_delete(self, id: str, list_docs: list[DocumentToDelete], list_dir: list[str]):
+        curr_dir = self.get(id)
+        list_dir.append(id)
+        for element in curr_dir.contained_items:
+            if element.item_type == "DIRECTORY":
+                self.add_to_delete(str(element.item_id),list_docs=list_docs, list_dir=list_dir)
+            elif element.item_type == "DOCUMENT":
+                list_docs.append(DocumentToDelete(doc_id=str(element.item_id),directory_id=id))
+
+    def delete_directory(self, id: str):
+        if not id:
+            raise ValueError("Directory_id must be provided.")
+
+        # Reference to the directory document to be deleted
+        directory_ref = self.collection.document(id)
+
+        # Reference to the subcollection "ContainedItems"
+        contained_items_ref = directory_ref.collection('ContainedItems')
+
+        # Get all documents in the "ContainedItems" subcollection
+        contained_items_docs = contained_items_ref.stream()
+
+        # Delete each document in the "ContainedItems" subcollection
+        for doc in contained_items_docs:
+            try:
+                doc.reference.delete()
+                print(f"Contained item {doc.id} in directory {id} successfully deleted.")
+            except Exception as e:
+                print(f"Error deleting contained item {doc.id} in directory {id}: {e}")
+
+        # Delete the directory document
+        try:
+            directory_ref.delete()
+            print(f"Directory with id {id} successfully deleted.")
+        except Exception as e:
+            print(f"Error deleting directory with id {id}: {e}")
+            raise
+        
+
+
+
+        
+

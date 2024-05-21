@@ -12,14 +12,14 @@ logging.basicConfig(filename="textbot.log", level=logging.INFO)
 from domain.events import DocumentCreatedEvent
 
 from domain.directory.directory import ContainedItem, ContainedItemType
-from domain.document.document import Document, KeyConcept
+from domain.document.document import Document, KeyConcept, WordCloud
 from domain.document.parse import DocumentProcessor
 from domain.events import DocumentCreatedEvent
-
 from ...firebase.persistence.firebase_file_storage import (FileMimeType,
                                                            FirebaseFileStorage)
 from ...firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from ...firebase.persistence.repos.document_repo import FirebaseDocumentRepo
+from ...counter.TextCounter import TextAnalyzer
 from ...openai.text_insight_extractor import OpenAITextInsightExtractor
 from ...parser.docx_parser import DOCXParser
 from ...parser.pdf_parser import PDFParser
@@ -122,6 +122,18 @@ def create_document(
     # Se agrega el archivo
     url = storage.add(file, mimetype)  # type: ignore
 
+    filter = TextAnalyzer()
+
+    filtered_text = filter.remove_stopwords(pll)
+
+    response = filter.word_cloud_filter(filtered_text)
+
+    word_cloud_list = []
+
+    for word, value in response.items():
+        # Append new WordCloud instances to the list with text and value
+        word_cloud_list.append(WordCloud(text=word, value=value))
+
     document = Document(
         id=document_id,
         ownerId=creator_id,
@@ -134,6 +146,7 @@ def create_document(
         summary=text_insight.summary,
         keyConcepts=key_concepts,
         relationships=[],
+        wordcloudinfo=word_cloud_list
     )
 
     doc_repo = FirebaseDocumentRepo()

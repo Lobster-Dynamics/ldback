@@ -79,6 +79,7 @@ class ParsedLLMInput(BaseModel):
     image_sections: Optional[List[DocumentImage]] = Field(None,alias="imageSections")
 
 
+
 class Document(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
     id: str = Field()
@@ -94,3 +95,4 @@ class Document(BaseModel):
     summary: Optional[Summary] = None
     key_concepts: Optional[List[KeyConcept]] = Field(None, alias="keyConcepts")
     relationships: Optional[List[Relationship]] = None
+    wordcloudinfo: Optional[List[WordCloud]] = None
