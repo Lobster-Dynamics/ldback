@@ -10,6 +10,14 @@ class ResultingChunk(BaseModel):
     text: str = Field()
     similarity: float = Field()
 
+class ResultingMessage(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    
+    id: str = Field()
+    question: str = Field()
+    answer: str = Field()
+    similarity: float = Field()
+
 class IVectorStore(ABC):
     """Interface meant to represent a vector store build
     of chunks of a specific document. 
@@ -27,8 +35,20 @@ class IVectorStore(ABC):
         """ Embeds the text and returns the 
         k most similar chunks to the embedded text
         """
+
+    @abstractmethod
+    def get_similar_past_messages(self, document_id: str, k: int, text: str) -> List[ResultingMessage]: 
+        """ Embeds the text (question) and returns the 
+        k most similar messages to the embedded text
+        """
+
+    @abstractmethod
+    def store_messages(self, document_id: str, message: str, answer:str) -> str:
+        """ Stores messages in vector store to be shown posteriorly and 
+        utilize search function.
+        """
     
-    abstractmethod
+    @abstractmethod
     def deleteNamespace(self, document_id: str) -> str: 
         """ Deletes the whole namespace given to it as document_id
         """
