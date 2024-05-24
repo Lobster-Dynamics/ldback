@@ -3,7 +3,7 @@ import json
 from typing import List
 
 from openai import OpenAI
-from domain.document.document import SummarySection
+from domain.document.document import SummarySection, Relationship
 from domain.document.ivector_store import IVectorStore
 from domain.document.itext_insight_extractor import (
     ITextInsightExtractor,
@@ -134,6 +134,24 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
             sections = [*sections, *self._extract_section_summary(text_fragment)["sections"]]
         
         return self._create_summary_from_json({"sections": sections})
+
+    def _extract_relationships_of_key_concept(
+            self, 
+            reelevant_chunks: List[str], 
+            key_concept: str, 
+            possibly_related_concepts: List[str]
+        ) -> List[Relationship]:
+        prompt = """Given the following things that happen
+        """
+
+    def _extract_relationships(self, key_concepts: List[str], text_vector_store: IVectorStore) -> List[Relationship]: 
+        """Creates relationships graph"""
+        # iterate through key concepts, eliminate current concept from list and give current list 
+        # as well as context from vector store to define relationships 
+        # retun a dict that maps key concept -> Relationships so that we can after use it
+        for i, key_concept in enumerate(key_concepts):
+            ...
+        
 
     def extract_insight(self, document_id: str, text_chunks: List[str], text_vector_store: IVectorStore) -> TextInsight:
         return TextInsight(
