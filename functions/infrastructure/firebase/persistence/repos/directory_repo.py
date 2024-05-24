@@ -2,8 +2,9 @@ from domain.directory import Directory
 from domain.directory.directory import ContainedItem, DocumentToDelete
 from domain.directory.repo import IDirectoryRepo
 from firebase_admin import firestore
+from google.cloud.firestore_v1 import DocumentSnapshot
 
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 class FirebaseDirectoryRepo(IDirectoryRepo):
     def __init__(self):
@@ -36,18 +37,55 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         doc_ref.set(main_directory_dict)
     
     def add_contained_item(self, directory_id: str, item: ContainedItem):
+        if not directory_id or not item:
+            raise KeyError("Directory id and Item must be provided")
+        
         # Reference to the subcollection 'ContainedItems' in the specified directory
-        doc_ref = self.collection.document(str(directory_id))
-        if not doc_ref.get().exists:
-            raise Exception("Directory not found")
-        item_ref = doc_ref.collection("ContainedItems").document(str(item.item_id))
+        dir_ref = self.collection.document(str(directory_id))
+        if not dir_ref.get().exists:
+            raise FileNotFoundError("Directory not found")
+        
+        contained_ref = dir_ref.collection("ContainedItems").document(str(item.item_id))
         
         # Add the document to the subcollection
-        item_ref.set({
+        contained_ref.set({
             "itemId": str(item.item_id),
             "itemType": item.item_type
         })
-
+        
+    def delete_contained_item(self, directory_id, item_id: str):
+        if not directory_id or not item_id:
+            raise KeyError("Directory id and Item must be provided")
+        
+        dir_ref = self.collection.document(str(directory_id))
+        if not dir_ref.get().exists:
+            raise FileNotFoundError("Directory not found")
+        
+        contained_ref = dir_ref.collection("ContainedItems").document(str(item_id))
+        if not contained_ref.get().exists:
+            raise FileNotFoundError("Contained item not found")
+        
+        # Use a batch to delete the contained item
+        batch = firestore.client().batch()
+        batch.delete(contained_ref)
+        batch.commit()
+   
+    def get_contained_item(self, directory_id, id: str):
+        if not directory_id or not id:
+            raise KeyError("Directory id and Item id must be provided")
+        
+        dir_ref = self.collection.document(str(directory_id))
+        if not dir_ref.get().exists:
+            raise FileNotFoundError("Directory not found")
+        
+        contained_ref = dir_ref.collection("ContainedItems").document(str(id))
+        contained_item: DocumentSnapshot = contained_ref.get()
+        if not contained_item.exists:
+            raise FileNotFoundError("Contained item not found")
+        
+        result = contained_item.to_dict()
+        return ContainedItem(**result)
+        
     def rename_directory(self, id: str, new_name: str):
         try:
             if not id:
@@ -60,49 +98,52 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         except Exception as e:
             print(f"Error renaming directory {id}: {e}")
 
-    def delete_contained_item(self, directory_id: str, doc_id: str):
+    # def delete_contained_item(self, directory_id: str, doc_id: str):
 
-        try:
-            # Validate the input
-            if not directory_id or not doc_id:
-                raise ValueError("Both directory_id and doc_id must be provided.")
+    #     try:
+    #         # Validate the input
+    #         if not directory_id or not doc_id:
+    #             raise ValueError("Both directory_id and doc_id must be provided.")
 
-            # Reference to the document to be deleted
-            directory_ref = (
-                self.collection
-                    .document(directory_id)
-                    .collection("ContainedItems")
-                    .document(doc_id)
-            )
+    #         # Reference to the document to be deleted
+    #         directory_ref = (
+    #             self.collection
+    #                 .document(directory_id)
+    #                 .collection("ContainedItems")
+    #                 .document(doc_id)
+    #         )
 
-            # Check if the document exists
-            doc = directory_ref.get()
-            if not doc.exists:
-                print(f"Document {doc_id} in directory {directory_id} does not exist.")
-                return None  # Exit early if the document doesn't exist
+    #         # Check if the document exists
+    #         doc = directory_ref.get()
+    #         if not doc.exists:
+    #             print(f"Document {doc_id} in directory {directory_id} does not exist.")
+    #             return None  # Exit early if the document doesn't exist
 
-            # Start a batch for batch deletion
-            batch = firestore.client().batch()
+    #         # Start a batch for batch deletion
+    #         batch = firestore.client().batch()
 
-            # Delete the document
-            batch.delete(directory_ref)  # Add to batch
+    #         # Delete the document
+    #         batch.delete(directory_ref)  # Add to batch
 
-            # Commit the batch to apply all deletions
-            batch.commit()
+    #         # Commit the batch to apply all deletions
+    #         batch.commit()
 
-            print(f"Successfully deleted document {doc_id} in directory {directory_id}.")
+    #         print(f"Successfully deleted document {doc_id} in directory {directory_id}.")
 
-        except Exception as e:
-            # Capture exceptions and print a meaningful message
-            print(f"Error deleting document {doc_id} in directory {directory_id}: {e}")
-            raise  # Re-raise the exception for further handling
+    #     except Exception as e:
+    #         # Capture exceptions and print a meaningful message
+    #         print(f"Error deleting document {doc_id} in directory {directory_id}: {e}")
+    #         raise  # Re-raise the exception for further handling
     
     def get(self, id: str):
+        if not id:
+            raise KeyError("Id must be provided")
+        
         doc_ref = self.collection.document(id)
         doc = doc_ref.get()
         
         if not doc.exists:
-            return None
+            raise FileNotFoundError("Directory not found")
         
         result = doc.to_dict()
         # Obtain the data from the directory
@@ -113,7 +154,38 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         
         return Directory(**result)
     
-    def update(self, item: Directory): ...
+    def get_reduced(self, id: str):
+        if not id:
+            raise KeyError("Directory id must be provided")
+        
+        doc_ref = self.collection.document(str(id))
+        doc: DocumentSnapshot = doc_ref.get()
+        if not doc.exists:
+            raise FileNotFoundError("Directory not found")
+        
+        result = doc.to_dict()
+        return Directory(**result)
+    
+    def update(self, item: Directory):
+        fields_to_exclude = {"containedItems"}
+        
+        if not isinstance(item, Directory):
+            raise TypeError("Item must be of type Directory")
+        
+        dir_ref = self.collection.document(str(item.id))
+        if not dir_ref.get().exists:
+            raise FileNotFoundError("Directory not found")
+        
+        directory = item.model_dump(by_alias=True)
+        if directory["parentId"] == None: # JUST IN CASE
+            fields_to_exclude.add("parentId")
+            
+        updated_directory = dict()
+        for key in directory:
+            if key in fields_to_exclude: continue
+            updated_directory[key] = str(directory[key])
+        
+        dir_ref.update(updated_directory)
     
     def new_uuid(self) -> uuid4:
         while True:
@@ -139,7 +211,11 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         return path[::-1]
     
     def add_to_delete(self, id: str, list_docs: list[DocumentToDelete], list_dir: list[str]):
-        curr_dir = self.get(id)
+        try:
+            curr_dir = self.get(id)
+        except FileNotFoundError as e:
+            print(f"Error getting directory {id}: {e}")
+            return
         list_dir.append(id)
         for element in curr_dir.contained_items:
             if element.item_type == "DIRECTORY":
@@ -175,9 +251,3 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
         except Exception as e:
             print(f"Error deleting directory with id {id}: {e}")
             raise
-        
-
-
-
-        
-

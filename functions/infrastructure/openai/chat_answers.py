@@ -6,19 +6,33 @@ from domain.document.ivector_store import IVectorStore, ResultingChunk
 from domain.document.ichat_answers import IChatAnswers
 from domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
+from firebase_admin import firestore
+import uuid
+import datetime
+
 
 class OpenAIChatExtractor(IChatAnswers):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         self.client = OpenAI(api_key=api_key)
         self.model = "gpt-3.5-turbo"
         self._vector_store = vector_store
+        self.db = firestore.client()
+
     
-    def _message_completion(self, document_id: str, text: str, vector_store: IVectorStore) -> str:
+    def _message_completion(self, document_id: str, user_id: str, text: str,vector_store: IVectorStore) -> str:
         chunks = vector_store.get_similar_chunks(document_id, 3, text)
         text_block = "\n".join([chunk.text for chunk in chunks])
+        message_id = str(uuid.uuid1())
+        response_id = str(uuid.uuid1())
+        now = datetime.datetime.now()
+        doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages").document(message_id)
+        doc_ref.set({"id": message_id, "content": text, "userID": user_id, "role": "user", "documentID": document_id, "timestamp": now})
+
+        #Deprecable si le echamos coco, era para historial con busqueda semantica, actualmente es para almacenar el mensaje embeddeado
+        #messages = vector_store.get_similar_past_messages(document_id, 3, text)
+        #text_messages = "\n".join([f"{msg.question}: {msg.answer}" for msg in messages])
         
-        messages = vector_store.get_similar_past_messages(document_id, 3, text)
-        text_messages = "\n".join([f"{msg.question}: {msg.answer}" for msg in messages])
+        past_messages=""
 
         whole_prompt = f"""
         You are an expert assistant chatbot having a conversation with a user. Your role is to examine the provided texts and past messages to generate responses based solely on the given information.
@@ -27,7 +41,7 @@ class OpenAIChatExtractor(IChatAnswers):
         {text_block}
 
         *Past messages and answers for context:*
-        {text_messages}
+        {past_messages}
 
         *User's question or statement:*
         {text}
@@ -54,11 +68,15 @@ class OpenAIChatExtractor(IChatAnswers):
             max_tokens=300,
             temperature=0
         )
-        self._vector_store.store_messages(document_id, text, response.choices[0].message.content)
+        #Pendiente y posiblemente deprecado
+        #self._vector_store.store_messages(document_id, text, response.choices[0].message.content)
+        
+        doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages").document(response_id)
+        doc_ref.set({"id": response_id, "content": response.choices[0].message.content, "userID": user_id, "role": "chat", "documentID": document_id, "timestamp": now})
         return response.choices[0].message.content
 
-    def extract_message(self, document_id: str, text: str) -> MessageContent:
-        message = self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store)
+    def extract_message(self, document_id: str, text: str, user_id: str) -> MessageContent:
+        message = self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store,user_id=user_id)
         print(message)
         return MessageContent(
             message=message

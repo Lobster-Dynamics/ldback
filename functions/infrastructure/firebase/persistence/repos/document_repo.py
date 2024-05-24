@@ -11,7 +11,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
     def __init__(self):
         self.db = firestore.client()
         self.collection = self.db.collection("Documents")
-        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
+        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
 
     def get_public_url(bucket_name, file_path):
 
@@ -32,7 +32,8 @@ class FirebaseDocumentRepo(IDocumentRepo):
             "summary",
             "keyConcepts",
             "relationships",
-            "parsedLLMInput", }
+            "parsedLLMInput", 
+            "pastMessages"}
 
         # Se remueven las colecciones
         main_document_dict = {
@@ -77,6 +78,13 @@ class FirebaseDocumentRepo(IDocumentRepo):
             for relationship in item.relationships:
                 relationship_doc = relationships_ref.document()
                 relationship_doc.set(relationship.dict(by_alias=True))
+
+        # Se maneja 'pastMessages' como una subcollection
+        if item.past_messages:
+            past_messages_ref = doc_ref.collection("PastMesssages")
+            for past_message in item.past_messages:
+                past_message_doc = past_messages_ref.document()
+                past_message_doc.set(past_message.dict(by_alias=True))
 
     def get(self, id: str):
         doc_ref = self.collection.document(id)
@@ -132,7 +140,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
         if not doc.exists:
             return None
 
-        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts"]
+        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
 
 
         try:

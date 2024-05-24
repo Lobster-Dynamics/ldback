@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 from flask import jsonify, request
 
 from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
@@ -29,16 +27,16 @@ def create_directory_handle():
     repo = FirebaseDirectoryRepo()
     
     # Check if the directory exists and the user is the owner
-    directory = repo.get(directory_id)
-    
-    if not directory:
-        return jsonify(msg="Directory not found"), 404
+    try:
+        directory = repo.get(directory_id)
+    except FileNotFoundError as e:
+        return jsonify(msg=str(e.args[0])), 404
     
     if not directory.owner_id == token["uid"]:
         return jsonify(msg="Not allowed to modify this directory"), 401
     
 
-    new_uuid = uuid4()
+    new_uuid = repo.new_uuid()
 
     # Create a new entry in the directory collection
     directory = Directory(

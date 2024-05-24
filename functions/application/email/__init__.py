@@ -1,0 +1,2 @@
+from iemail import IEmail
+

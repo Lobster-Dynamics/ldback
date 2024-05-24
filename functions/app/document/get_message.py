@@ -13,19 +13,18 @@ def get_message_handle():
     try:
         data = request.get_json()
     except Exception:
-        return jsonify(msg=f"Request must contain id and query."), 400
+        return jsonify(msg=f"Request must contain both ids and query."), 400
     
     id:str
     query:str
     try:
         id = data["id"]
+        userid = data["userid"]
         query = data["query"]
-        print(id)
-        print(query)
     except Exception:
         return jsonify(msg=f"Failed to set id and query."), 401
     try:
-        response = bot.extract_message(document_id=id, text=query)
+        response = bot.extract_message(document_id=id, user_id=userid, text=query,)
         print(response)
         return jsonify({"msg" : f"{response.message}"})
     except Exception as e:
