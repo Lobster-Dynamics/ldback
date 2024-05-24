@@ -1,4 +1,5 @@
-from abc import ABC, absractmethod
+from typing import Any
+from abc import ABC, abstractmethod
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,6 +19,6 @@ class DocumentImage(BaseModel):
 
 
 class IEMAIL(ABC):
-    @absractmethod
+    @abstractmethod
     def send_email(self, subject: str, body: str, to_email: str) -> None:
         pass
