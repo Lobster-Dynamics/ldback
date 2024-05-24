@@ -18,10 +18,10 @@ def get_directory_handle(id: str):
     user_repo = FirebaseUserRepo()
     
     # Get data from the directory
-    directory = dir_repo.get(str(id))
-    
-    if not directory:
-        return jsonify(msg="Directory not found"), 404
+    try:
+        directory = dir_repo.get(str(id))
+    except FileNotFoundError as e:
+        return jsonify(msg=str(e)), 404
     
     if not directory.owner_id == token["uid"]:
         return jsonify(msg="Not allowed to view this directory"), 401
@@ -37,8 +37,11 @@ def get_directory_handle(id: str):
         elif item["item_type"] == "DOCUMENT":
             contained_item = doc_repo.get_reduced(str(item["item_id"]))
 
-        if not contained_item:
-            continue
+        try:
+            if not contained_item:
+                continue
+        except FileNotFoundError as e:
+            return jsonify(msg=str(e)), 404
 
         item["name"] = contained_item.name
         item["owner_id"] = contained_item.owner_id
