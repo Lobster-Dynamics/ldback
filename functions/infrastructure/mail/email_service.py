@@ -64,8 +64,7 @@ class EmailService(IEMAIL):
         else:
             self.email_queue.put(email_data)
             print(
-                f"Email queued for {
-                    email_data['to_email']} due to no SMTP connection"
+                f"Email queued for {email_data['to_email']} due to no SMTP connection"
             )
 
     def send_email(self, subject: str, body: str, to_email: str):
