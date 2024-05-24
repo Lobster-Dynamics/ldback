@@ -1,2 +1,2 @@
-from iemail import IEmail
+from .iemail import IEMAIL, Email
 

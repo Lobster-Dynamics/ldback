@@ -12,3 +12,6 @@ class IUserRepo(ABC):
 
     @abstractmethod
     def update(self, item: User): ...
+
+    @abstractmethod
+    def get_with_email(self, email: str) -> User: ...
