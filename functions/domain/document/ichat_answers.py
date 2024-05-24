@@ -18,7 +18,15 @@ class IChatAnswers(ABC):
     """Interface meant to utilize the embeddings stored on the vector database to answer questions, the available tokens are split
     between chunks, previous message context, the question and the answer.
     """
+<<<<<<< Updated upstream
 
     @abstractmethod
     def extract_message(self, document_id: str, text: str) -> MessageContent:
         """Assembles the message into the required format for storage and posterior usage."""
+=======
+    
+    @abstractmethod 
+    def extract_message(self, document_id: str, user_id: str, text: str) -> MessageContent: 
+        """Assembles the message into the required format for storage and posterior usage.
+        """
+>>>>>>> Stashed changes
