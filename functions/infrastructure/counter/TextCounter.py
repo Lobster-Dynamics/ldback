@@ -1,19 +1,24 @@
+from langdetect import DetectorFactory, detect
+import yake
+from collections import Counter
 import re
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+
 nltk.download("stopwords")
 nltk.download("punkt")
-from collections import Counter
-from langdetect import detect, DetectorFactory
-import yake 
+
 
 class TextAnalyzer:
     def __init__(self):
         pass
 
     def word_frequency(self, text, word):
-        occurrences = re.findall(r'\b' + re.escape(word) + r'\b', text, flags=re.IGNORECASE)
+        occurrences = re.findall(
+            r"\b" + re.escape(word) + r"\b", text, flags=re.IGNORECASE
+        )
         return len(occurrences)
 
     def remove_stopwords(self, text):
@@ -27,7 +32,6 @@ class TextAnalyzer:
 
         # kw_extractor = yake.KeywordExtractor(lan=language, n=max_ngram_size, dedupLim=deduplication_threshold, windowsSize=windowSize, top=numOfKeywords, features=None)
 
-        
         # Initialize the language detector
         DetectorFactory.seed = 0  # Ensures reproducible results with `langdetect`
 
@@ -35,19 +39,21 @@ class TextAnalyzer:
         # print("Original list:", real_text)
 
         # Create a new list excluding items that start with "https://"
-        real_text = [item for item in real_text if not item.startswith("gs://")]
-        real_text = [item for item in real_text if not item.startswith("https://")]
+        real_text = [
+            item for item in real_text if not item.startswith("gs://")]
+        real_text = [
+            item for item in real_text if not item.startswith("https://")]
 
         # print("Updated list:", real_text)
-        
+
         whole_text = " ".join(real_text)
-        
+
         # print(len(whole_text))
         # keywords = kw_extractor.extract_keywords(whole_text)
 
         # for kw in keywords:
         #     print(kw)
-        
+
         # Tokenize the text into words
         words = word_tokenize(whole_text)
 
@@ -74,24 +80,22 @@ class TextAnalyzer:
         # print("\n")
         # for kw in keywords:
         #     print(kw)
-        
+
         # for word in filtered_words:
         #     print(word)
-        
+
         return filtered_words
-    
+
     def word_cloud_filter(self, text, n=10):
         # print(text)
         whole_text = " ".join(text)
         # print(whole_text)
-        words = re.findall(r'\b\w+\b', whole_text.lower())
+        words = re.findall(r"\b\w+\b", whole_text.lower())
         word_counts = Counter(words)
-        
+
         return dict(word_counts.most_common(n))
 
     def most_common_words(self, text, n=100):
-        words = re.findall(r'\b\w+\b', text.lower())
+        words = re.findall(r"\b\w+\b", text.lower())
         word_counts = Counter(words)
         return dict(word_counts.most_common(n))
-
-
