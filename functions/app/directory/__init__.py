@@ -7,3 +7,4 @@ from .get_directory import *
 from .create_directory import *
 from .delete_directory import *
 from .share_directory import *
+from .move_item import *
