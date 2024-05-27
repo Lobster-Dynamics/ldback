@@ -11,13 +11,6 @@ class Email(BaseModel):
     to_email: str = Field()
 
 
-class DocumentImage(BaseModel):
-    model_config = ConfigDict(frozen=True)
-    name: str = Field()
-
-    data: Any = Field()
-
-
 class IEMAIL(ABC):
     @abstractmethod
     def send_email(self, subject: str, body: str, to_email: str) -> None:

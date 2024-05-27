@@ -1,6 +1,8 @@
 from domain.user import User
 from domain.user.repo import IUserRepo
-from firebase_admin import firestore
+from firebase_admin import firestore, auth
+from urllib.parse import urlparse, parse_qs
+
 
 class FirebaseUserRepo(IUserRepo):
     def __init__(self):
@@ -41,3 +43,32 @@ class FirebaseUserRepo(IUserRepo):
             doc_ref.update(updated_user)
         except:
             raise ValueError("Error updating user")
+
+    def generate_link(self, email: str):
+        if not email:
+            raise ValueError("No email passed to the function")
+        
+        try:
+            # Generate the email verification link
+            link = auth.generate_password_reset_link(email=email)
+            
+            # Parse the URL
+            parsed_url = urlparse(link)
+            
+            # Parse the query parameters
+            query_params = parse_qs(parsed_url.query)
+            
+            # Get the value of the 'oobCode' parameter
+            oob_code = query_params.get('oobCode', [None])[0]
+            
+            if oob_code is None:
+                raise ValueError("oobCode parameter not found in the generated link")
+            
+            # Construct the final link
+            reset_link = f"http://localhost:3000/forgot/reset-password?token={oob_code}&email={email}"
+            
+            return reset_link
+        except auth.AuthError as e:
+            raise ValueError(f"Error creating link: {e}")
+        except Exception as e:
+            raise ValueError(f"An unexpected error occurred: {e}")
