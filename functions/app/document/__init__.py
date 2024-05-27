@@ -12,3 +12,4 @@ from .generate_word_cloud import *
 from .get_message import *
 from .search_document import *
 from .delete_key_concept import *
+from .share_document import *

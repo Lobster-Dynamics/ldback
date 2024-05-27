@@ -1,22 +1,24 @@
 import json
 from typing import List
 
-from openai import OpenAI
+from domain.document.ichat_answers import IChatAnswers, MessageContent
 from domain.document.ivector_store import IVectorStore, ResultingChunk
-from domain.document.ichat_answers import IChatAnswers
-from domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
+from openai import OpenAI
+
 
 class OpenAIChatExtractor(IChatAnswers):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         self.client = OpenAI(api_key=api_key)
         self.model = "gpt-3.5-turbo"
         self._vector_store = vector_store
-    
-    def _message_completion(self, document_id: str, text: str, vector_store: IVectorStore) -> str:
+
+    def _message_completion(
+        self, document_id: str, text: str, vector_store: IVectorStore
+    ) -> str:
         chunks = vector_store.get_similar_chunks(document_id, 3, text)
         text_block = "\n".join([chunk.text for chunk in chunks])
-        
+
         messages = vector_store.get_similar_past_messages(document_id, 3, text)
         text_messages = "\n".join([f"{msg.question}: {msg.answer}" for msg in messages])
 
@@ -52,14 +54,16 @@ class OpenAIChatExtractor(IChatAnswers):
                 },
             ],
             max_tokens=300,
-            temperature=0
+            temperature=0,
         )
-        self._vector_store.store_messages(document_id, text, response.choices[0].message.content)
+        self._vector_store.store_messages(
+            document_id, text, response.choices[0].message.content
+        )
         return response.choices[0].message.content
 
     def extract_message(self, document_id: str, text: str) -> MessageContent:
-        message = self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store)
-        print(message)
-        return MessageContent(
-            message=message
+        message = self._message_completion(
+            document_id=document_id, text=text, vector_store=self._vector_store
         )
+        print(message)
+        return MessageContent(message=message)

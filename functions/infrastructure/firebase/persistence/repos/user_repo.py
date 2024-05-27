@@ -1,5 +1,6 @@
 from domain.user import User
 from domain.user.repo import IUserRepo
+from domain.user.user import SharedItem
 from firebase_admin import firestore
 
 
@@ -48,4 +49,13 @@ class FirebaseUserRepo(IUserRepo):
         for doc in docs:
             result = doc.to_dict()
             return User(**result)
-        return None
+        raise ValueError("User not found")
+
+    def add_shared_item(self, shared_item: SharedItem, user_id: str):
+        doc_ref = self.collection.document(user_id)
+
+        shared_items_ref = doc_ref.collection("SharedItems")
+
+        shared_items_ref.document(shared_item.type_id).set(
+            shared_item.model_dump(by_alias=True)
+        )
