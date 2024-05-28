@@ -64,6 +64,7 @@ class KeyConcept(BaseModel):
 class Relationship(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
+    id: str = Field()
     father_concept_id: str = Field(alias="fatherConceptId")
     child_concept_id: str = Field(alias="childConceptId")
     description: str = Field()
