@@ -13,25 +13,25 @@ class VectorStore(IVectorStore):
         self.pc_model = "text-embedding-3-small"
         self.pc = Pinecone(api_key=pc_api_key)
         self.index=self.pc.Index("embedding-storage")
-        self.index_messages=self.pc.Index("past-messages")
+        #self.index_messages=self.pc.Index("past-messages")
     
-    def store_messages(self, document_id: str, message: str, answer:str) -> str:
-        interaction_id = str(uuid.uuid1())
-        
-        question_answer = f"""
-        {message} : {answer}
-        """
-        response = self.op.embeddings.create(
-            input=question_answer,
-            model=self.pc_model
-        )
-        self.index_messages.upsert(
-            vectors=[
-                {"id":interaction_id, "values":response.data[0].embedding, "metadata":{"Question":message, "Answer":answer}}
-            ],
-            namespace=document_id
-        )
-        return interaction_id
+    #def store_messages(self, document_id: str, message: str, answer:str) -> str:
+    #    interaction_id = str(uuid.uuid1())
+    #    
+    #    question_answer = f"""
+    #    {message} : {answer}
+    #    """
+    #    response = self.op.embeddings.create(
+    #        input=question_answer,
+    #        model=self.pc_model
+    #    )
+    #   self.index_messages.upsert(
+    #        vectors=[
+    #            {"id":interaction_id, "values":response.data[0].embedding, "metadata":{"Question":message, "Answer":answer}}
+    #        ],
+    #        namespace=document_id
+    #    )
+    #    return interaction_id
 
     def insert(self, document_id: str, text: str) -> str: 
         chunk_id = str(uuid.uuid1())
@@ -50,31 +50,31 @@ class VectorStore(IVectorStore):
     
     def deleteNamespace(self, document_id: str) -> str:
         self.index.delete(delete_all=True, namespace=document_id)
-        self.index_messages.delete(delete_all=True, namespace=document_id)
+        #self.index_messages.delete(delete_all=True, namespace=document_id)
         return document_id
 
-    def get_similar_past_messages(self, document_id: str, k: int, text: str) -> List[ResultingMessage]: 
-        ...
-        response = self.op.embeddings.create(
-            input=text,
-            model=self.pc_model
-        )
-        result=self.index_messages.query(
-            namespace=document_id,
-            vector=response.data[0].embedding,
-            top_k=k,
-            include_values=False,
-            include_metadata=True
-        )
-        messages = []
-        for i in range(len(result.matches)):
-            messages.append(ResultingMessage(
-                id=result.matches[i].id,
-                question=result.matches[i].metadata["Question"],
-                answer=result.matches[i].metadata["Answer"],
-                similarity=result.matches[i].score
-            ))
-        return messages
+    #def get_similar_past_messages(self, document_id: str, k: int, text: str) -> List[ResultingMessage]: 
+    #    ...
+    #    response = self.op.embeddings.create(
+    #        input=text,
+    #       model=self.pc_model
+    #    )
+    #    result=self.index_messages.query(
+    #        namespace=document_id,
+    #        vector=response.data[0].embedding,
+    #        top_k=k,
+    #        include_values=False,
+    #        include_metadata=True
+    #    )
+    #    messages = []
+    #    for i in range(len(result.matches)):
+    #        messages.append(ResultingMessage(
+    #            id=result.matches[i].id,
+    #            question=result.matches[i].metadata["Question"],
+    #            answer=result.matches[i].metadata["Answer"],
+    #            similarity=result.matches[i].score
+    #        ))
+    #    return messages
 
     def get_similar_chunks(self, document_id: str, k: int, text: str) -> List[ResultingChunk]: 
         response = self.op.embeddings.create(

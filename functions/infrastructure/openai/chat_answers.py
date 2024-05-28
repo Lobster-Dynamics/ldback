@@ -7,6 +7,9 @@ from domain.document.ichat_answers import IChatAnswers
 from domain.document.ichat_answers import MessageContent
 from infrastructure.vector_store.vector_store import VectorStore
 from firebase_admin import firestore
+from google.cloud.firestore_v1 import FieldFilter
+
+
 import uuid
 import datetime
 
@@ -18,12 +21,35 @@ class OpenAIChatExtractor(IChatAnswers):
         self._vector_store = vector_store
         self.db = firestore.client()
 
+    def _past_messages(self, document_id: str, user_id: str, amount: int) -> List[MessageContent]:
+        doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages")
+        query = doc_ref.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(amount)
+        results = query.stream()
+        messages = []
+        for result in results:
+            res = result.to_dict()
+            messages.append(MessageContent(message=res["content"], role=res["role"]))
+        return messages
     
+    def _all_messages(self, document_id: str, user_id: str) -> List[MessageContent]:
+        doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages")
+        query = doc_ref.order_by("timestamp", direction=firestore.Query.DESCENDING)
+        results = query.stream()
+        messages = []
+        for result in results:
+            res = result.to_dict()
+            messages.append(MessageContent(message=res["content"], role=res["role"]))
+        return messages
+
     def _message_completion(self, document_id: str, user_id: str, text: str,vector_store: IVectorStore) -> str:
         chunks = vector_store.get_similar_chunks(document_id, 3, text)
         text_block = "\n".join([chunk.text for chunk in chunks])
         message_id = str(uuid.uuid1())
         response_id = str(uuid.uuid1())
+
+        past_messages=self._past_messages(document_id, user_id, 10)
+        text_past_messages = "\n".join([past_message.message for past_message in past_messages])
+
         now = datetime.datetime.now()
         doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages").document(message_id)
         doc_ref.set({"id": message_id, "content": text, "userID": user_id, "role": "user", "documentID": document_id, "timestamp": now})
@@ -32,8 +58,6 @@ class OpenAIChatExtractor(IChatAnswers):
         #messages = vector_store.get_similar_past_messages(document_id, 3, text)
         #text_messages = "\n".join([f"{msg.question}: {msg.answer}" for msg in messages])
         
-        past_messages=""
-
         whole_prompt = f"""
         You are an expert assistant chatbot having a conversation with a user. Your role is to examine the provided texts and past messages to generate responses based solely on the given information.
 
@@ -41,7 +65,7 @@ class OpenAIChatExtractor(IChatAnswers):
         {text_block}
 
         *Past messages and answers for context:*
-        {past_messages}
+        {text_past_messages}
 
         *User's question or statement:*
         {text}
@@ -50,7 +74,8 @@ class OpenAIChatExtractor(IChatAnswers):
         - Answer concisely and precisely as if you were the text's author.
         - Use the provided text as the primary source.
         - Utilize past messages for additional context but do not repeat them.
-        - If the user's input is a statement respond with Understood, if you can't answer the question with the provided texts simply answer that you cannot answer with the available information.
+        - If the user's input is a statement respond with Understood or Entendido if it is in spanish, if you can't answer the question with the provided texts simply answer that you cannot answer with the available information.
+        - If the user's input is "Why?" or "Explain more" or "go deeper" or any question like that take into account the last question and explain it more into detail.
         """
 
         response = self.client.chat.completions.create(
@@ -79,5 +104,6 @@ class OpenAIChatExtractor(IChatAnswers):
         message = self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store,user_id=user_id)
         print(message)
         return MessageContent(
-            message=message
+            message=message,
+            role="chat"
         )

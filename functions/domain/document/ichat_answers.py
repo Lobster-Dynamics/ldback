@@ -11,7 +11,7 @@ class MessageContent(BaseModel):
 
     # id: str = Field()
     message: str = Field()
-    # role: str = Field()
+    role: str = Field()
 
 
 class IChatAnswers(ABC):
