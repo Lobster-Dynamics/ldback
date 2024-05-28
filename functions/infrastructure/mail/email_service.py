@@ -48,7 +48,7 @@ class EmailService(IEMAIL):
                 msg["From"] = SMTP_USERNAME
                 msg["To"] = email_data["to_email"]
                 msg["Subject"] = email_data["subject"]
-                msg.attach(MIMEText(email_data["body"], "plain"))
+                msg.attach(MIMEText(email_data["body"], "html"))
 
                 self.smtp_connection.sendmail(
                     SMTP_USERNAME, email_data["to_email"], msg.as_string()
