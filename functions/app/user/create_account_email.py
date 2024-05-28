@@ -55,11 +55,6 @@ def create_account_email_handle():
             ownerId=""
         )
 
-        shareddir = Directory(
-            id=user.directorysharedid,
-            name= "Shares",
-            ownerId=""
-        )
     except ValidationError:
         return jsonify(msg=f"Email and Lastname must be between 4 and 15 characters. Email must be valid"), 400
 
