@@ -267,10 +267,10 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             print(f"Error deleting directory with id {id}: {e}")
             raise
 
-    def add_shared_user(self, user_id: str, directory_id: str):
+    def add_shared_user(self, transaction, user_id: str, directory_id: str):
         try:
             doc_ref = self.collection.document(directory_id)
-            doc_ref.update({"sharedUsers": firestore.ArrayUnion([user_id])})
+            transaction.update(doc_ref,{"sharedUsers": firestore.ArrayUnion([user_id])})
 
             contained_items_docs = doc_ref.collection(
                 "ContainedItems").stream()
@@ -287,16 +287,16 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
                     item_id = doc_data["itemId"]
 
                     if item_type == "DOCUMENT":
-                        self.document_repo.share_document(item_id, user_id)
+                        self.document_repo.share_document(transaction,item_id, user_id)
                     elif item_type == "DIRECTORY":
-                        self.add_shared_user(user_id, item_id)
+                        self.add_shared_user(transaction, user_id, item_id)
                 except KeyError as e:
-                    print(f"Error adding user {user_id} to directory {directory_id}: Missing field {e}")
+                    raise ValueError(f"Error adding user {user_id} to directory {directory_id}: Missing field {e}")
         except Exception as e:
-            print(f"An error occurred while adding user {user_id} to directory {directory_id}: {e}")
+            raise Exception(f"An error occurred while adding user {user_id} to directory {directory_id}: {e}")
 
-    def share_directory(self, user_id: str, directory_id: str):
+    def share_directory(self,transaction,user_id: str, directory_id: str):
         try:
-            self.add_shared_user(user_id, directory_id)
+            self.add_shared_user(transaction,user_id, directory_id)
         except Exception as e:
-            print(f"An error occurred while sharing directory {directory_id} with user {user_id}: {e}")
+            raise Exception(f"An error occurred while sharing directory {directory_id} with user {user_id}: {e}")

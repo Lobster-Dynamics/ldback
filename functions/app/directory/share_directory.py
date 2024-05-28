@@ -6,8 +6,11 @@ from infrastructure.firebase.persistence.repos.document_repo import \
     FirebaseDocumentRepo
 from infrastructure.firebase.persistence.repos.user_repo import \
     FirebaseUserRepo
+from firebase_admin import firestore
 
 from . import directory_blueprint
+
+db = firestore.client()
 
 
 @directory_blueprint.route("/share_directory", methods=["PUT"])
@@ -18,7 +21,7 @@ def share_directory_handle():
         data = request.json
         # Conseguimos los datos que necesitamos
         directory_id = data["directory_id"]
-        shared_email = data["user_id"]
+        shared_email = data["shared_email"]
         uuid_user = token["uid"]
         priority = data["priority"]
 
@@ -45,7 +48,7 @@ def share_directory_handle():
             return jsonify(msg="An error occurred"), 500
 
         # Revisar si el directorio pertenece al usuario
-        if directory["ownerId"] != uuid_user:
+        if directory.owner_id != uuid_user:
             return jsonify(msg="Directory does not belong to the user"), 403
 
         # Si el directorio existe, hay que compartir al usuario
@@ -55,18 +58,25 @@ def share_directory_handle():
         )
 
         # Se añade el objeto compartido al usuario
-        user_repo.add_shared_item(shared_item, shared_user["id"])
 
         # Se añade dentro de cada shared_item un atributo llamado shared_with
 
-        dir_repo.share_directory(shared_user["id"], directory_id)
+        try:
+            with db.transaction() as transaction:
+                dir_repo.share_directory(transaction,shared_user.id, directory_id)
+                user_repo.add_shared_item(transaction,shared_item, shared_user.id)
+        except ValueError as e:
+            return jsonify(msg=str(e.args[0])), 404
+        except Exception as e:
+            return jsonify(msg=str(e.args[0])), 500
+
 
         # Se manda un correo a la persona que se le compartio el directorio
 
         email_service = current_app.email_service
 
         email_service.send_email(
-            f"{actual_user['name']} {actual_user['lastname']} "
+            f"{actual_user.name} {actual_user.lastname} "
             "te compartio un directorio",
             "Se te ha compartido un directorio",
             shared_email,
@@ -75,4 +85,4 @@ def share_directory_handle():
         return jsonify(msg="Directory shared successfully"), 200
 
     except Exception as e:
-        return jsonify(msg=str(e)), 500
+        return jsonify(status="error",msg=str(e)), 500

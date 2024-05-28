@@ -51,11 +51,13 @@ class FirebaseUserRepo(IUserRepo):
             return User(**result)
         raise ValueError("User not found")
 
-    def add_shared_item(self, shared_item: SharedItem, user_id: str):
-        doc_ref = self.collection.document(user_id)
-
-        shared_items_ref = doc_ref.collection("SharedItems")
-
-        shared_items_ref.document(shared_item.type_id).set(
-            shared_item.model_dump(by_alias=True)
-        )
+    def add_shared_item(self, transaction, shared_item: SharedItem, user_id: str):
+        try:
+            doc_ref = self.collection.document(user_id)
+            shared_items_ref = doc_ref.collection("SharedItems")
+            transaction.set(
+                shared_items_ref.document(shared_item.type_id),
+                shared_item.model_dump(by_alias=True),
+            )
+        except Exception as e:
+            raise Exception(f"An error occurred while adding shared item {shared_item.type_id} for user {user_id}: {e}")

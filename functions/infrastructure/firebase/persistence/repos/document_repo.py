@@ -220,8 +220,11 @@ class FirebaseDocumentRepo(IDocumentRepo):
 
         return docs
 
-    def share_document(self, document_id: str, shared_with: str):
-        # Se obtiene el documento
-        doc_ref = self.collection.document(document_id)
-        # Se añade el usuario al que se le compartio el documento
-        doc_ref.update({"sharedUsers": firestore.ArrayUnion([shared_with])})
+    def share_document(self,transaction, document_id: str, shared_with: str):
+        try:
+            # Se obtiene el documento
+            doc_ref = self.collection.document(document_id)
+            # Se añade el usuario al que se le compartio el documento
+            transaction.update(doc_ref, {"sharedUsers": firestore.ArrayUnion([shared_with])})
+        except Exception as e:
+            raise Exception(f"An error occurred while sharing document {document_id}: {e}")

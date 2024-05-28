@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class SharedItem(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
-    privilege_level: int = Field(alias="privilegeLevel")
+    privilege_level: str = Field(alias="privilegeLevel")
     type: str = Field(alias="type")
     type_id: str = Field(alias="typeId")
 
