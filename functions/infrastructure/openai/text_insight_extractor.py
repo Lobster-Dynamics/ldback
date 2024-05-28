@@ -1,6 +1,7 @@
 import math
+import uuid
 import json
-from typing import List
+from typing import Dict, List
 
 from openai import OpenAI
 from domain.document.document import SummarySection, Relationship
@@ -10,6 +11,8 @@ from domain.document.itext_insight_extractor import (
     TextInsight,
     BiblioGraphicInfo,
     Summary,
+    KeyConcept, 
+    Relationship
 )
 
 
@@ -78,7 +81,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         raw_bibliographic_info_obj = self._get_json_response(prompt)
         return BiblioGraphicInfo.model_validate(raw_bibliographic_info_obj)
 
-    def _extract_core_concepts_of_fragment(self, text_fragment: str) -> List[str]:
+    def _extract_raw_key_concepts_of_fragment(self, text_fragment: str) -> List[str]:
         prompt = f"""
         Given the following text: "{text_fragment}" \n
         pleasae, give me a list of the core concepts within the text. Give me at least 5 core concepts and at most 10 core concepts. 
@@ -87,14 +90,42 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         raw_json_reponse = self._get_json_response(prompt)
         return raw_json_reponse["concepts"]
 
-    def _extract_core_concepts(self, text_chunks: List[str]) -> List[str]:
+    def _create_key_concept(
+        self, document_id: str, key_concept_name: str, vector_store: IVectorStore
+    ) -> KeyConcept:
+        """ Creates key concepts without its relationships """
+        chunks_likeley_to_define_key_concept = vector_store.get_similar_chunks(
+            document_id=document_id, text=key_concept_name, k=4
+        )
+        likeley_to_define_text = ""
+        for chunk in chunks_likeley_to_define_key_concept:
+            likeley_to_define_text += chunk.text + " "
+        prompt = f"""
+        Given the following text:"{likeley_to_define_text}" \n
+        try to briefly and concisely define the following concept: "{key_concept_name}".
+        Your response should be just raw text.
+        """
+        description = self._get_response(prompt)
+        return KeyConcept(
+            id=str(uuid.uuid1()), 
+            name=key_concept_name, 
+            description=description, 
+            relationships=[]
+        )
+
+    def _extract_key_concepts(
+        self, 
+        document_id: str, 
+        vector_store: IVectorStore, 
+        text_chunks: List[str]
+    ) -> List[KeyConcept]:
         concepts = []
         
         # for each four chunks
         for text_fragment in self._fragment_iterator(text_chunks, 4):
             concepts = [
                 *concepts, 
-                *self._extract_core_concepts_of_fragment(text_fragment)
+                *self._extract_raw_key_concepts_of_fragment(text_fragment)
             ]
 
         prompt = f"""
@@ -106,7 +137,19 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         Give me the core concepts in a json object with only one attribute "concepts" which is a list of strings which are the core concepts
         """
         raw_json_reponse = self._get_json_response(prompt)
-        return raw_json_reponse["concepts"]
+        
+        concept_names = raw_json_reponse["concepts"]
+        concepts = []
+        for concept_name in concept_names:
+            concepts.append(
+                self._create_key_concept(
+                    document_id=document_id, 
+                    key_concept_name=concept_name, 
+                    vector_store=vector_store
+                )
+            )
+
+        return concepts
 
     def _create_summary_from_json(self, data: dict) -> Summary:
         assert isinstance(data["sections"], list)
@@ -135,27 +178,79 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         
         return self._create_summary_from_json({"sections": sections})
 
-    def _extract_relationships_of_key_concept(
-            self, 
-            reelevant_chunks: List[str], 
-            key_concept: str, 
-            possibly_related_concepts: List[str]
-        ) -> List[Relationship]:
-        prompt = """Given the following things that happen
-        """
 
-    def _extract_relationships(self, key_concepts: List[str], text_vector_store: IVectorStore) -> List[Relationship]: 
-        """Creates relationships graph"""
-        # iterate through key concepts, eliminate current concept from list and give current list 
-        # as well as context from vector store to define relationships 
-        # retun a dict that maps key concept -> Relationships so that we can after use it
-        for i, key_concept in enumerate(key_concepts):
-            ...
+    def _extract_relationships_in_which_concept_is_father(
+        self, 
+        key_concept: KeyConcept, 
+        key_concepts: List[KeyConcept],
+        vector_store: IVectorStore,
+        document_id: str,     
+    ) -> List[Relationship]:
+        relationships = []
+        father_key_concept_json_string = json.dumps(key_concept.model_dump_json())
+        key_concepts_strings = ""
+        for key_concept in key_concepts:
+            key_concepts_strings += json.dumps(key_concept.model_dump_json()) + "\n"
         
+        chunks_likeley_to_define_key_concept = vector_store.get_similar_chunks(
+            document_id=document_id, text=key_concept.name, k=4
+        )
+        likeley_to_define_text = ""
+        for chunk in chunks_likeley_to_define_key_concept:
+            likeley_to_define_text += chunk.text + " "
+        
+        prompt = f"""
+        Consider the following FATHER CONCEPT: {father_key_concept_json_string} \n
+        Also consider the following information about that key concept: \n 
+        {likeley_to_define_text}
+        Also consider the following key concepts: 
+        {key_concepts_strings} \n
+        Given all the information that I just provided you, please give me a json list of the 
+        all the relationships in which the concept that I first gave you: "{key_concept.name}", is the 
+        FATHER CONCEPT or a concept in which another concept of all the concepts that I gave you depends.
+        Every item of the json list that you provide must follow the following json schema: 
+        {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship"}'}
+        """
+        raw_relationships = self._get_json_response(prompt)
+        relations = json.loads(raw_relationships)
+        for relation in relations: 
+            relationships.append(
+                Relationship(
+                    id=str(uuid.uuid1()), 
+                    fatherConceptId=key_concept.id, 
+                    childConceptId=relation["child_concept_id"], 
+                    description=relation["description"]
+                )
+            )
+        return relationships
 
     def extract_insight(self, document_id: str, text_chunks: List[str], text_vector_store: IVectorStore) -> TextInsight:
+        key_concepts = self._extract_key_concepts(
+            document_id=document_id,
+            vector_store=text_vector_store, 
+            text_chunks=text_chunks
+        )
+        ids_to_key_concepts: Dict[str, KeyConcept] = \
+            {key_concept.id: key_concept for key_concept in key_concepts}
+
+        relationships = []
+        for key_concept in key_concepts:
+            # get concepts in which key concept is father
+            relationships_in_which_key_is_father = self._extract_relationships_in_which_concept_is_father(
+                key_concept=key_concept, 
+                key_concepts=key_concepts, 
+                vector_store=text_vector_store, 
+                document_id=document_id
+            )
+            # add each concept to a father and child concept
+            for relationship in relationships_in_which_key_is_father:
+                ids_to_key_concepts[relationship.father_concept_id].relationships.append(relationship.id)
+                ids_to_key_concepts[relationship.child_concept_id].relationships.append(relationship.id)
+            relationships = [*relationships, *relationships_in_which_key_is_father]
+        
         return TextInsight(
             bibliografic_info=self._extract_bibliographic_info(document_id, text_vector_store),
-            key_concepts=self._extract_core_concepts(text_chunks),
+            key_concepts=key_concepts,
             summary=self._extract_summary(text_chunks),
+            relationships=relationships
         )
