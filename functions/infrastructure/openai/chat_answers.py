@@ -39,7 +39,8 @@ class OpenAIChatExtractor(IChatAnswers):
         for message in result: 
             res = message.to_dict()
             reversed_message.append(MessageContent(message=res["content"], role=res["role"]))
-            reversed_message = reversed_message[::-1]
+            
+        reversed_message = reversed_message[::-1]
 
         
         return reversed_message

@@ -8,7 +8,7 @@ from infrastructure.openai.chat_answers import OpenAIChatExtractor
 from infrastructure.vector_store.vector_store import VectorStore
 from domain.document.ichat_answers import MessageContent
 
-@document_blueprint.route("/get_all_messages", methods=["GET"])
+@document_blueprint.route("/get_all_messages", methods=["POST"])
 def get_all_messages_handle():
     bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"], vector_store=VectorStore(pc_api_key=os.environ["PINECONE_API_KEY"], op_api_key=os.environ["OPENAI_API_KEY"]))
     try:
