@@ -74,6 +74,16 @@ class DocumentImage(BaseModel):
     location: str = Field()
     url: str = Field()
 
+class Message(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    id: str = Field()
+    content: str = Field()
+    userID: str = Field()
+    role: str = Field()
+    documentID: str = Field()
+    timestamp: str = Field()
+
+
 class ParsedLLMInput(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
     content: List[str] = Field()
@@ -97,3 +107,4 @@ class Document(BaseModel):
     key_concepts: Optional[List[KeyConcept]] = Field(None, alias="keyConcepts")
     relationships: Optional[List[Relationship]] = None
     wordcloudinfo: Optional[List[WordCloud]] = None
+    past_messages: Optional[List[Message]] = Field(None, alias="pastMessages")

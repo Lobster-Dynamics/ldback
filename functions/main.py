@@ -6,7 +6,6 @@ from firebase_functions import https_fn
 
 from app import create_app
 
-
 # NOTE: if "max_instances" parameter is changed to be something different from int(1),
 #       the "session" object of "flask" will stop working, making the whole app
 #       fail

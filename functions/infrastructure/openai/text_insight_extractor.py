@@ -4,7 +4,7 @@ import json
 from typing import Dict, List
 
 from openai import OpenAI
-from domain.document.document import SummarySection
+from domain.document.document import SummarySection, Relationship
 from domain.document.ivector_store import IVectorStore
 from domain.document.itext_insight_extractor import (
     ITextInsightExtractor,
@@ -177,6 +177,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
             sections = [*sections, *self._extract_section_summary(text_fragment)["sections"]]
         
         return self._create_summary_from_json({"sections": sections})
+
 
     def _extract_relationships_in_which_concept_is_father(
         self, 

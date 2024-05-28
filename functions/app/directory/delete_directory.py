@@ -68,7 +68,7 @@ def delete_directory_handle(id, root_id):
                 return jsonify({"msg": f"Error deleting directory {dir}: {e}"}), 400
             
         try:
-            directory.delete_contained_item(directory_id=root_id, doc_id=id)
+            directory.delete_contained_item(root_id, id)
         except Exception as e:
             return jsonify({"msg": f"Error deleting directory {id} from {root_id}: {e}"}), 400
         
