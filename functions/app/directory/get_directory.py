@@ -25,7 +25,13 @@ def get_directory_handle(id: str):
     except FileNotFoundError as e:
         return jsonify(msg=str(e)), 404
 
-    if not directory.owner_id == token["uid"]:
+    is_shared_user = (
+        hasattr(
+            directory, "shared_users") and token["uid"] in directory.shared_users
+    )
+
+
+    if  directory.owner_id != token["uid"] and not is_shared_user:
         return jsonify(msg="Not allowed to view this directory"), 401
 
     directory = directory.model_dump()
@@ -64,6 +70,11 @@ def get_directory_handle(id: str):
             item["owner_name"] = owner_name
     directory["owner_name"] = owner_name_dict[directory["owner_id"]]
     directory["path"] = dir_repo.get_path(str(directory["id"]))
+
+    if is_shared_user:
+        directory["shared"] = True
+        directory["path"] = directory["path"][1:]
+        del directory["shared_users"]
 
     if not directory:
         return jsonify(msg="An error ocurred while getting the directory"), 400

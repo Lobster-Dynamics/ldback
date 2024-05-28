@@ -31,4 +31,5 @@ class Directory(BaseModel):
     name: str = Field()
     owner_id: str = Field(alias="ownerId")
     contained_items: List[ContainedItem] = Field(None, alias="containedItems")
+    shared_users: List[str] = Field(None, alias="sharedUsers")
     parent_id: Any = Field(None, alias="parentId")

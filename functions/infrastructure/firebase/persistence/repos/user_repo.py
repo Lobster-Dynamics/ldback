@@ -61,3 +61,15 @@ class FirebaseUserRepo(IUserRepo):
             )
         except Exception as e:
             raise Exception(f"An error occurred while adding shared item {shared_item.type_id} for user {user_id}: {e}")
+
+    def get_shared_items(self, user_id: str):
+        try:
+            doc_ref = self.collection.document(user_id)
+            shared_items_ref = doc_ref.collection("SharedItems")
+            docs = shared_items_ref.stream()
+            shared_items = []
+            for doc in docs:
+                shared_items.append(SharedItem(**doc.to_dict()))
+            return shared_items
+        except Exception as e:
+            raise Exception(f"An error occurred while getting shared items for user {user_id}: {e}")
