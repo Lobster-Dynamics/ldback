@@ -23,7 +23,7 @@ class OpenAIChatExtractor(IChatAnswers):
 
     def _past_messages(self, document_id: str, user_id: str, amount: int) -> List[MessageContent]:
         doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages")
-        query = doc_ref.order_by("timestamp", direction=firestore.Query.DESCENDING).limit(amount)
+        query = doc_ref.where(filter=FieldFilter("userID", "==", user_id)).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(amount)
         results = query.stream()
         messages = []
         for result in results:
@@ -33,13 +33,14 @@ class OpenAIChatExtractor(IChatAnswers):
     
     def _all_messages(self, document_id: str, user_id: str) -> List[MessageContent]:
         doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages")
-        query = doc_ref.order_by("timestamp", direction=firestore.Query.DESCENDING)
-        results = query.stream()
-        messages = []
-        for result in results:
-            res = result.to_dict()
-            messages.append(MessageContent(message=res["content"], role=res["role"]))
-        return messages
+        query = doc_ref.where(filter=FieldFilter("userID", "==", user_id)).order_by("timestamp", direction=firestore.Query.DESCENDING)
+        result = query.stream()
+        reversed_message = []
+        for message in result: 
+            reversed_message.append(message.to_dict())
+            reversed_message = reversed_message[::-1]
+        
+        return reversed_message
 
     def _message_completion(self, document_id: str, user_id: str, text: str,vector_store: IVectorStore) -> str:
         chunks = vector_store.get_similar_chunks(document_id, 3, text)
