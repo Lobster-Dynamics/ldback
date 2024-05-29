@@ -11,7 +11,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
     def __init__(self):
         self.db = firestore.client()
         self.collection = self.db.collection("Documents")
-        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
+        self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages", "Relationships"]
 
     def get_public_url(bucket_name, file_path):
 
@@ -105,6 +105,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
             subcollections_data[subcollection] = [
                 subdoc.to_dict() for subdoc in subdocs
             ]
+
         parsed_input = subcollections_data["ParsedLLMInput"]
         for i,item in enumerate(parsed_input[0]["content"]):
             if item.startswith("gs://"):
@@ -116,10 +117,10 @@ class FirebaseDocumentRepo(IDocumentRepo):
         
                 
         result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
-
         result["summary"] = subcollections_data["Summary"][0]
         result["keyConcepts"] = subcollections_data["KeyConcepts"]
-
+        result["relationships"] = subcollections_data["Relationships"]
+        
         return Document(**result)
     
     def rename(self, id: str, new_name: str):
