@@ -19,7 +19,7 @@ def share_document():
         data = request.json
         # Conseguimos los datos que necesitamos
         document_id = data["document_id"]
-        shared_email = data["user_id"]
+        shared_email = data["shared_email"]
         uuid_user = token["uid"]
         priority = data["priority"]
 
@@ -42,7 +42,7 @@ def share_document():
         except ValueError as e:
             return jsonify(msg=str(e.args[0])), 404
         except Exception as e:
-            return jsonify(msg="An error occurred"), 500
+            return jsonify(msg="An error occurred",error=str(e.args[0])), 500
 
         # Revisar si el documento pertenece al usuario
         if document.owner_id != uuid_user:
@@ -58,13 +58,12 @@ def share_document():
         try:
             with db.transaction() as transaction:
                 # Se añade el objeto compartido al usuario
-                user_repo.add_shared_item(transaction,shared_item,shared_user["id"])
+                user_repo.add_shared_item(transaction,shared_item,shared_user.id)
                 # Se añade al documento
                 doc_repo.share_document(
                     transaction,
                     document_id,
-                    shared_user["id"]
-                )
+                    shared_user.id)
         except ValueError as e:
             return jsonify(msg=str(e.args[0])), 404
         except Exception as e:
@@ -84,4 +83,4 @@ def share_document():
         return jsonify(msg="Shared document successfully"), 200
 
     except Exception as e:
-        return jsonify(msg="An error occurred"), 500
+        return jsonify(msg="An error occurred", error=str(e)), 500

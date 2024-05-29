@@ -26,12 +26,12 @@ def get_directory_handle(id: str):
         return jsonify(msg=str(e)), 404
 
     is_shared_user = (
-        hasattr(
-            directory, "shared_users") and token["uid"] in directory.shared_users
+        hasattr(directory, "shared_users")
+        and directory.shared_users is not None
+        and token["uid"] in directory.shared_users
     )
 
-
-    if  directory.owner_id != token["uid"] and not is_shared_user:
+    if directory.owner_id != token["uid"] and not is_shared_user:
         return jsonify(msg="Not allowed to view this directory"), 401
 
     directory = directory.model_dump()
