@@ -73,7 +73,10 @@ def get_directory_handle(id: str):
 
     if is_shared_user:
         directory["shared"] = True
-        directory["path"] = directory["path"][1:]
+#        directory["path"] = directory["path"][1:]
+        del directory["shared_users"]
+    else:
+        directory["shared"] = False
         del directory["shared_users"]
 
     if not directory:
