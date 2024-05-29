@@ -113,11 +113,7 @@ def create_document(
     text_insight = text_insight_extractor.extract_insight(
         document_id, chunks, vector_storage)  # type: ignore
 
-    key_concepts = [
-        KeyConcept(id=str(uuid.uuid1()), name=keyc,
-                   description=keyc, relationships=[])
-        for keyc in text_insight.key_concepts
-    ]
+    key_concepts = text_insight.key_concepts
 
     # Se agrega el archivo
     url = storage.add(file, mimetype)  # type: ignore
@@ -145,7 +141,7 @@ def create_document(
         biblioGraficInfo=None,  # Error, esto no funciona con docx asi que esta desactivado
         summary=text_insight.summary,
         keyConcepts=key_concepts,
-        relationships=[],
+        relationships=text_insight.relationships,
         wordcloudinfo=word_cloud_list
     )
 

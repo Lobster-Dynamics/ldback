@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import math
 import uuid
 import json
@@ -48,7 +50,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
 
         return completion.choices[0].message.content  # type: ignore
 
-    def _get_json_response(self, prompt: str) -> dict:
+    def _get_json_response(self, prompt: str) -> dict | list:
         json_string = self._get_response(prompt)
         try:
             return json.loads(json_string)
@@ -103,9 +105,9 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         prompt = f"""
         Given the following text:"{likeley_to_define_text}" \n
         try to briefly and concisely define the following concept: "{key_concept_name}".
-        Your response should be just raw text.
+        Your response should be a json object with an attrbute called "definition"
         """
-        description = self._get_response(prompt)
+        description = self._get_json_response(prompt)["definition"]
         return KeyConcept(
             id=str(uuid.uuid1()), 
             name=key_concept_name, 
@@ -187,10 +189,17 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         document_id: str,     
     ) -> List[Relationship]:
         relationships = []
-        father_key_concept_json_string = json.dumps(key_concept.model_dump_json())
+        
+        # dont give the model a lot of ids or it will get confused
+        father_key_concept_json  = key_concept.model_dump()
+        father_key_concept_json["relationships"] = []
+        father_key_concept_json_string = json.dumps(father_key_concept_json, indent=3)
+        
         key_concepts_strings = ""
         for key_concept in key_concepts:
-            key_concepts_strings += json.dumps(key_concept.model_dump_json()) + "\n"
+            key_concept_json = key_concept.model_dump()
+            key_concept_json["relationships"] = []
+            key_concepts_strings += json.dumps(key_concept_json, indent=3) + "\n"
         
         chunks_likeley_to_define_key_concept = vector_store.get_similar_chunks(
             document_id=document_id, text=key_concept.name, k=4
@@ -205,15 +214,20 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         {likeley_to_define_text}
         Also consider the following key concepts: 
         {key_concepts_strings} \n
-        Given all the information that I just provided you, please give me a json list of the 
-        all the relationships in which the concept that I first gave you: "{key_concept.name}", is the 
-        FATHER CONCEPT or a concept in which another concept of all the concepts that I gave you depends.
-        Every item of the json list that you provide must follow the following json schema: 
-        {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship"}'}
+        Given all the information that I just provided you, please give me a json object that has \n
+        an attribute called "relationships", this attribute is a list of json objects which represent relationships \n 
+        THE FATHER CONCEPT OF ALL RELATIONSHIPS is the concept that I first gave you: "{key_concept.name}". \n
+        All the items of the relationships attribute must represent a relationship between the father concept and the rest of the concepts that I gave you if \n
+        there is such a relationship.\n 
+        Every item of the attribute "relationships" that you provide must follow the following json schema: 
+        {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship"}'} \n
         """
+
         raw_relationships = self._get_json_response(prompt)
-        relations = json.loads(raw_relationships)
-        for relation in relations: 
+        logger.info("RAW_RELATIONSHIPS_HERE")
+        logger.info(raw_relationships)
+
+        for relation in raw_relationships["relationships"]: 
             relationships.append(
                 Relationship(
                     id=str(uuid.uuid1()), 
