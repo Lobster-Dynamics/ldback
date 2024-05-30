@@ -1,31 +1,38 @@
 from flask import jsonify, request
-
-from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
-from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocumentRepo
-from infrastructure.firebase.persistence.repos.user_repo import FirebaseUserRepo
+from infrastructure.firebase.persistence.repos.directory_repo import \
+    FirebaseDirectoryRepo
+from infrastructure.firebase.persistence.repos.document_repo import \
+    FirebaseDocumentRepo
+from infrastructure.firebase.persistence.repos.user_repo import \
+    FirebaseUserRepo
 
 from . import directory_blueprint
 
 
-@directory_blueprint.route('/get_directory/<string:id>', methods=['GET'])
+@directory_blueprint.route("/get_directory/<string:id>", methods=["GET"])
 def get_directory_handle(id: str):
     token = request.token
-    
+
     # TODO: Return path to the directory
     # Reference to directory & document repo
     dir_repo = FirebaseDirectoryRepo()
     doc_repo = FirebaseDocumentRepo()
     user_repo = FirebaseUserRepo()
-    
+
     # Get data from the directory
     try:
         directory = dir_repo.get(str(id))
     except FileNotFoundError as e:
         return jsonify(msg=str(e)), 404
-    
-    if not directory.owner_id == token["uid"]:
+    is_shared_user = (
+        hasattr(directory, "shared_users")
+        and directory.shared_users is not None
+        and token["uid"] in directory.shared_users
+    )
+
+    if directory.owner_id != token["uid"] and not is_shared_user:
         return jsonify(msg="Not allowed to view this directory"), 401
-    
+
     directory = directory.model_dump()
     owner_ids: set = {directory["owner_id"]}
     owner_name_dict: dict = {}
@@ -63,7 +70,15 @@ def get_directory_handle(id: str):
     directory["owner_name"] = owner_name_dict[directory["owner_id"]]
     directory["path"] = dir_repo.get_path(str(directory["id"]))
 
+    if is_shared_user:
+        directory["shared"] = True
+#        directory["path"] = directory["path"][1:]
+        del directory["shared_users"]
+    else:
+        directory["shared"] = False
+        del directory["shared_users"]
+
     if not directory:
         return jsonify(msg="An error ocurred while getting the directory"), 400
-        
+
     return jsonify(directory)

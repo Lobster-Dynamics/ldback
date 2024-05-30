@@ -1,6 +1,4 @@
-from typing import Any
 from abc import ABC, abstractmethod
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -15,3 +13,4 @@ class IEMAIL(ABC):
     @abstractmethod
     def send_email(self, subject: str, body: str, to_email: str) -> None:
         pass
+
