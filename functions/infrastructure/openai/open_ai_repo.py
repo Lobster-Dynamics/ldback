@@ -6,14 +6,13 @@ from domain.document.ivector_store import IVectorStore, ResultingChunk
 from domain.document.iopenai_fragment import IFragmentExplanation
 from domain.document.ichat_answers import MessageContent
 from domain.document.iopenai_fragment import FragmentContent
+from domain.document.document import ExplanationFragment
 from infrastructure.vector_store.vector_store import VectorStore
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import FieldFilter
 
-
 import uuid
 import datetime
-
 
 class OpenAIFragmentExtractor(IFragmentExplanation):
     def __init__(self, api_key: str, vector_store: IVectorStore):
@@ -21,12 +20,10 @@ class OpenAIFragmentExtractor(IFragmentExplanation):
         self.model = "gpt-3.5-turbo"
         self._vector_store = vector_store
         self.db = firestore.client()
-    
-    def _fragment_explanation(self, document_id: str, query: str, vector_store: IVectorStore) -> str:
+
+    def _fragment_explanation(self, document_id: str, query: str, vector_store: IVectorStore) -> ExplanationFragment:
         chunks = vector_store.get_similar_chunks(document_id, 3, query)
         text_block = "\n".join([chunk.text for chunk in chunks])
-
-
 
         whole_prompt = f"""
 INSTRUCCIONES:
@@ -60,10 +57,60 @@ Fin de FRAGMENTO A EXPLICAR
             temperature=0
         )
         
-        return response.choices[0].message.content
+        explanation_text = response.choices[0].message.content
+
+        title_prompt = f"""
+INSTRUCCIONES:
+Proporciona un título breve y conciso para la siguiente explicación.
+No contestes nada mas que con el titulo que generes no le agregues un preambulo o una explicacion antes, solo el titulo.
+
+
+EXPLICACIÓN:
+{explanation_text}
+        """
+
+        title_response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Tu eres un asistente experto que proporciona títulos breves para explicaciones.",
+                },
+                {
+                    "role": "user",
+                    "content": title_prompt,
+                },
+            ],
+            max_tokens=100,
+            temperature=0
+        )
+        
+        explanation_title = title_response.choices[0].message.content.strip()
+
+        return ExplanationFragment(titulo=explanation_title, texto=explanation_text)
 
     def extract_fragment(self, document_id: str, query: str) -> FragmentContent:
-        explanation = self._fragment_explanation(document_id=document_id, query=query, vector_store=self._vector_store)
-        return FragmentContent(explanation=explanation)
-    
-    
+        explanation_fragment = self._fragment_explanation(document_id=document_id, query=query, vector_store=self._vector_store)
+        
+        # Fetch the document from Firestore
+        doc_ref = self.db.collection('Documents').document(document_id)
+        doc = doc_ref.get()
+        
+        # Check if the document exists and if the 'historicexplanations' field exists
+        if doc.exists:
+            doc_data = doc.to_dict()
+            if 'historicexplanations' in doc_data:
+                historic_explanations = doc_data['historicexplanations']
+            else:
+                historic_explanations = []
+        else:
+            # If the document doesn't exist, initialize the historic explanations list
+            historic_explanations = []
+        
+        # Append the new explanation fragment
+        historic_explanations.append({"texto": explanation_fragment.texto, "titulo": explanation_fragment.titulo })
+        
+        # Update the document with the new list
+        doc_ref.set({'historicexplanations': historic_explanations}, merge=True)
+        
+        return FragmentContent(explanation=explanation_fragment.texto)

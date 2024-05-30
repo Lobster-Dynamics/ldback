@@ -142,7 +142,8 @@ def create_document(
         summary=text_insight.summary,
         keyConcepts=key_concepts,
         relationships=text_insight.relationships,
-        wordcloudinfo=word_cloud_list
+        wordcloudinfo=word_cloud_list,
+        historicexplanations=[]
     )
 
     doc_repo = FirebaseDocumentRepo()
