@@ -114,13 +114,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
                 path_parts = item.split("gs://")[1].split("/")
                 bucket_name = path_parts[0]
                 file_path = "/".join(path_parts[1:])
-<<<<<<< HEAD
-                public_url = FirebaseDocumentRepo.get_public_url(bucket_name, file_path)
-                parsed_input[0]["content"][i]=public_url 
-        
-                
-        result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
-=======
                 public_url = FirebaseDocumentRepo.get_public_url(
                     bucket_name, file_path)
                 parsed_input[0]["content"][i] = public_url
@@ -128,7 +121,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
         result["parsedLLMInput"] = ParsedLLMInput(
             content=parsed_input[0]["content"], image_sections=None)
 
->>>>>>> 567ea859e985e02a4c0679e1443880db826d4b7f
         result["summary"] = subcollections_data["Summary"][0]
         result["keyConcepts"] = subcollections_data["KeyConcepts"]
         result["relationships"] = subcollections_data["Relationships"]
