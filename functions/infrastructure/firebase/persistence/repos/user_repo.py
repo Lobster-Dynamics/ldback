@@ -1,13 +1,10 @@
 from domain.user import User
 from domain.user.repo import IUserRepo
-<<<<<<< HEAD
 from firebase_admin import firestore, auth
 from urllib.parse import urlparse, parse_qs
 
-=======
 from domain.user.user import SharedItem
 from firebase_admin import firestore
->>>>>>> share
 
 
 class FirebaseUserRepo(IUserRepo):
@@ -50,7 +47,6 @@ class FirebaseUserRepo(IUserRepo):
         except:
             raise ValueError("Error updating user")
 
-<<<<<<< HEAD
     def generate_link(self, email: str):
         if not email:
             raise ValueError("No email passed to the function")
@@ -79,7 +75,7 @@ class FirebaseUserRepo(IUserRepo):
             raise ValueError(f"Error creating link: {e}")
         except Exception as e:
             raise ValueError(f"An unexpected error occurred: {e}")
-=======
+
     def get_with_email(self, email: str):
         docs = self.collection.where("email", "==", email).stream()
         for doc in docs:
@@ -109,4 +105,3 @@ class FirebaseUserRepo(IUserRepo):
             return shared_items
         except Exception as e:
             raise Exception(f"An error occurred while getting shared items for user {user_id}: {e}")
->>>>>>> share
