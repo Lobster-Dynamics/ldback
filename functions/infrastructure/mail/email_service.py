@@ -11,6 +11,7 @@ SMTP_PORT = 465
 SMTP_USERNAME = "fridaresearch@frida-backend.me"
 SMTP_PASSWORD = "contrasena123R"
 
+
 class EmailService(IEMAIL):
 
     def __init__(self):
@@ -22,8 +23,7 @@ class EmailService(IEMAIL):
             try:
                 if self.smtp_connection is None:
                     print("Connecting to the SMTP server...")
-                    self.smtp_connection = smtplib.SMTP_SSL(
-                        SMTP_SERVER, SMTP_PORT)
+                    self.smtp_connection = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
                     self.smtp_connection.login(SMTP_USERNAME, SMTP_PASSWORD)
                     print("Connected to the SMTP server.")
                 else:
@@ -68,12 +68,7 @@ class EmailService(IEMAIL):
             )
 
     def send_email(self, subject: str, body: str, to_email: str):
-        email_data = {
-
-            "subject": subject,
-            "body": body,
-            "to_email": to_email
-        }
+        email_data = {"subject": subject, "body": body, "to_email": to_email}
 
         if self.smtp_connection:
             self.send_email_via_smtp(email_data)

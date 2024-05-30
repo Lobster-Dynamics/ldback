@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 from enum import Enum
 
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -31,4 +31,5 @@ class Directory(BaseModel):
     name: str = Field()
     owner_id: str = Field(alias="ownerId")
     contained_items: List[ContainedItem] = Field(None, alias="containedItems")
+    shared_users: Optional[List[str]] = Field(None, alias="sharedUsers")
     parent_id: Any = Field(None, alias="parentId")
