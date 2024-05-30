@@ -8,7 +8,7 @@ from .ivector_store import IVectorStore
 class TextInsight(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    bibliografic_info: BiblioGraphicInfo = Field()
+    bibliografic_info: BiblioGraphicInfo | None = Field()
     key_concepts: List[KeyConcept] = Field()
     summary: Summary = Field()
     relationships: List[Relationship] = Field()
