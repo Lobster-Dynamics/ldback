@@ -13,3 +13,4 @@ from .get_message import *
 from .search_document import *
 from .delete_key_concept import *
 from .get_all_messages import *
+from .share_document import *

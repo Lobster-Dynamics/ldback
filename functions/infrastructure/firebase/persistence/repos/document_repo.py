@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
+
 from domain.document import Document
 from domain.document.document import ParsedLLMInput
 from domain.document.repo import IDocumentRepo
-from firebase_admin import firestore
+from firebase_admin import firestore, storage
 from google.cloud.firestore import DocumentReference
-from firebase_admin import storage
-from datetime import datetime, timedelta
+
 
 class FirebaseDocumentRepo(IDocumentRepo):
 
@@ -14,7 +15,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
         self.subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
 
     def get_public_url(bucket_name, file_path):
-
         """Generate a signed URL for public access."""
         bucket = storage.bucket(bucket_name)
         blob = bucket.blob(file_path)
@@ -56,8 +56,10 @@ class FirebaseDocumentRepo(IDocumentRepo):
             parsed_input_ref.set({"content": item.parsed_llm_input.content})
             if item.parsed_llm_input.image_sections is not None:
                 for image in item.parsed_llm_input.image_sections:
-                    image_ref = parsed_input_ref.collection("ImageSections").document(image.location)
-                    image_ref.set({"location": image.location, "url": image.url})
+                    image_ref = parsed_input_ref.collection(
+                        "ImageSections").document(image.location)
+                    image_ref.set(
+                        {"location": image.location, "url": image.url})
 
         # Se maneja 'summary' como una subcolección
         if item.summary:
@@ -106,22 +108,23 @@ class FirebaseDocumentRepo(IDocumentRepo):
                 subdoc.to_dict() for subdoc in subdocs
             ]
         parsed_input = subcollections_data["ParsedLLMInput"]
-        for i,item in enumerate(parsed_input[0]["content"]):
+        for i, item in enumerate(parsed_input[0]["content"]):
             if item.startswith("gs://"):
                 path_parts = item.split("gs://")[1].split("/")
                 bucket_name = path_parts[0]
                 file_path = "/".join(path_parts[1:])
-                public_url = FirebaseDocumentRepo.get_public_url(bucket_name, file_path)
-                parsed_input[0]["content"][i]=public_url 
-        
-                
-        result["parsedLLMInput"] = ParsedLLMInput(content=parsed_input[0]["content"],image_sections=None)
+                public_url = FirebaseDocumentRepo.get_public_url(
+                    bucket_name, file_path)
+                parsed_input[0]["content"][i] = public_url
+
+        result["parsedLLMInput"] = ParsedLLMInput(
+            content=parsed_input[0]["content"], image_sections=None)
 
         result["summary"] = subcollections_data["Summary"][0]
         result["keyConcepts"] = subcollections_data["KeyConcepts"]
 
         return Document(**result)
-    
+
     def rename(self, id: str, new_name: str):
         doc_ref = self.collection.document(id)
         doc = doc_ref.get()
@@ -142,7 +145,6 @@ class FirebaseDocumentRepo(IDocumentRepo):
 
         subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
 
-
         try:
             # Start a batch for batch deletion
             batch = firestore.client().batch()
@@ -151,27 +153,27 @@ class FirebaseDocumentRepo(IDocumentRepo):
             for subcollection_name in subcollections:
                 if subcollection_name == "ParsedLLMInput" and len(ids) > 0:
                     subcollection_ref = doc_ref.collection(subcollection_name)
-                    
+
                     # Stream the documents in this subcollection
                     documents_in_subcollection = subcollection_ref.stream()
-                    
+
                     for doc in documents_in_subcollection:
-                        # Check if "ImageSections" subcollection exists in the current document   
+                        # Check if "ImageSections" subcollection exists in the current document
                         # If "ImageSections" subcollection exists, delete documents in it
-                        image_sections_ref = doc.reference.collection("ImageSections")
+                        image_sections_ref = doc.reference.collection(
+                            "ImageSections")
                         images_in_subcollection = image_sections_ref.stream()
-                        
+
                         for image in images_in_subcollection:
-                            batch.delete(image.reference)  # Delete the document in the subcollection
-                        
+                            # Delete the document in the subcollection
+                            batch.delete(image.reference)
+
                         # Optionally, delete the "ImageSections" subcollection document reference
                         # You might not need this line if the subcollection is already deleted
-                        # batch.delete(image_sections_ref) 
+                        # batch.delete(image_sections_ref)
 
                     # Continue to next subcollection
 
-
-                    
                 subcollection_ref = doc_ref.collection(subcollection_name)
                 subdocs = subcollection_ref.stream()
 
@@ -202,27 +204,35 @@ class FirebaseDocumentRepo(IDocumentRepo):
                 subdoc.to_dict() for subdoc in subdocs
             ]
         parsed_input = subcollections_data["ParsedLLMInput"]
-        for i,item in enumerate(parsed_input[0]["content"]):
+        for i, item in enumerate(parsed_input[0]["content"]):
             if item.startswith("gs://"):
                 path_parts = item.split("gs://")[1].split("/")
                 file_path = "/".join(path_parts[1:])
-                ids.append(file_path) 
+                ids.append(file_path)
         return ids
 
-            
     def get_reduced(self, id: str):
         doc_ref = self.collection.document(id)
         doc = doc_ref.get()
-        
+
         if not doc.exists:
             return None
-        
+
         result = doc.to_dict()
-        
+
         return Document(**result)
 
     def get_all(self, id: str):
         query = self.collection.where("ownerId", "==", id)
         docs = query.stream()
-        
+
         return docs
+
+    def share_document(self,transaction, document_id: str, shared_with: str):
+        try:
+            # Se obtiene el documento
+            doc_ref = self.collection.document(document_id)
+            # Se añade el usuario al que se le compartio el documento
+            transaction.update(doc_ref, {"sharedUsers": firestore.ArrayUnion([shared_with])})
+        except Exception as e:
+            raise Exception(f"An error occurred while sharing document {document_id}: {e}")
