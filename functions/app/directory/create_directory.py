@@ -4,6 +4,8 @@ from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDir
 from domain.directory import Directory
 from domain.directory.directory import ContainedItem
 
+import datetime
+
 from . import directory_blueprint
 
 
@@ -39,12 +41,15 @@ def create_directory_handle():
     new_uuid = repo.new_uuid()
 
     # Create a new entry in the directory collection
+    now = datetime.datetime.now()
+
     directory = Directory(
         id=new_uuid,
         name=name,
         ownerId=token["user_id"],
         containedItems=[],
-        parentId=directory_id
+        parentId=directory_id,
+        uploadDate=now
     )
     
     contained_item = ContainedItem(

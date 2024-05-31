@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date,datetime
 from typing import List, Optional
 from enum import Enum
 
@@ -112,3 +112,4 @@ class Document(BaseModel):
     wordcloudinfo: Optional[List[WordCloud]] = None
     past_messages: Optional[List[Message]] = Field(None, alias="pastMessages")
     historicexplanations: Optional[List[ExplanationFragment]] = None
+    upload_date: datetime = Field(alias="uploadDate")

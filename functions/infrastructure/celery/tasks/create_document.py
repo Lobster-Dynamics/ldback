@@ -5,6 +5,7 @@ import uuid
 from io import BytesIO
 import uuid
 import logging 
+import datetime
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename="textbot.log", level=logging.INFO)
@@ -130,6 +131,8 @@ def create_document(
         # Append new WordCloud instances to the list with text and value
         word_cloud_list.append(WordCloud(text=word, value=value))
 
+    now = datetime.datetime.now()
+
     document = Document(
         id=document_id,
         ownerId=creator_id,
@@ -143,7 +146,8 @@ def create_document(
         keyConcepts=key_concepts,
         relationships=text_insight.relationships,
         wordcloudinfo=word_cloud_list,
-        historicexplanations=[]
+        historicexplanations=[],
+        uploadDate=now
     )
 
     doc_repo = FirebaseDocumentRepo()
