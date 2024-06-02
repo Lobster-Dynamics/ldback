@@ -3,7 +3,6 @@ from uuid import uuid4
 from domain.directory import Directory
 from domain.directory.directory import ContainedItem, DocumentToDelete
 from domain.directory.repo import IDirectoryRepo
-from domain.user.user import SharedItem
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import DocumentSnapshot
 from infrastructure.firebase.persistence.repos.document_repo import \
@@ -182,8 +181,9 @@ class FirebaseDirectoryRepo(IDirectoryRepo):
             raise FileNotFoundError("Directory not found")
 
         directory = item.model_dump(by_alias=True)
-        if directory["parentId"] == None:  # JUST IN CASE
-            fields_to_exclude.add("parentId")
+        if directory["parentId"] == None: fields_to_exclude.add("parentId")
+        if directory["sharedUsers"] == None or directory["sharedUsers"] == "None":
+            fields_to_exclude.add("sharedUsers")
 
         updated_directory = dict()
         for key in directory:
