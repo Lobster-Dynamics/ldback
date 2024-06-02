@@ -68,7 +68,7 @@ class FirebaseUserRepo(IUserRepo):
                 raise ValueError("oobCode parameter not found in the generated link")
             
             # Construct the final link
-            reset_link = f"http://localhost:3000/forgot/reset-password?token={oob_code}&email={email}"
+            reset_link = f"https://frida-research.web.app/forgot/reset-password?token={oob_code}&email={email}"
             
             return reset_link
         except auth.AuthError as e:
