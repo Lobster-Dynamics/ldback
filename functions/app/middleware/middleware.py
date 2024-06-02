@@ -14,11 +14,12 @@ def verify_jwt():
         verify_jwt_middleware = not hasattr(view_func, '_exclude_verify_token')
     if not verify_jwt_middleware or request.method == "OPTIONS": return
 
-    auth_header = request.headers.get('Authorization')    
+    auth_header = request.headers.get('Authorization') or request.headers.get('authorization')
     if not auth_header:
         return jsonify(msg="Authorization header is required"), 400
 
     token = auth_header.replace('Bearer ', '')
+    token = token.replace('bearer ', '')
     if not token:
         return jsonify(msg="Token must be set"), 400
 

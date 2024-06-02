@@ -44,7 +44,7 @@ def get_directory_handle(id: str):
     # Add name and extension to the contained items
     for item in directory["contained_items"]:
         if item["item_type"] == "DIRECTORY":
-            contained_item = dir_repo.get(str(item["item_id"]))
+            contained_item = dir_repo.get_reduced(str(item["item_id"]))
         elif item["item_type"] == "DOCUMENT":
             contained_item = doc_repo.get_reduced(str(item["item_id"]))
 
