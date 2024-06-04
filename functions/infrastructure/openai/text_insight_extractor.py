@@ -96,7 +96,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         return raw_json_reponse["concepts"]
 
     def _create_key_concept(
-        self, document_id: str, key_concept_name: str, vector_store: IVectorStore
+        self, concept_id: str, document_id: str, key_concept_name: str, vector_store: IVectorStore
     ) -> KeyConcept:
         """ Creates key concepts without its relationships """
         chunks_likeley_to_define_key_concept = vector_store.get_similar_chunks(
@@ -112,7 +112,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         """
         description = self._get_json_response(prompt)["definition"]
         return KeyConcept(
-            id=str(uuid.uuid1()), 
+            id=concept_id, 
             name=key_concept_name, 
             description=description, 
             relationships=[]
@@ -145,9 +145,10 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         
         concept_names = raw_json_reponse["concepts"]
         concepts = []
-        for concept_name in concept_names:
+        for i, concept_name in enumerate(concept_names):
             concepts.append(
                 self._create_key_concept(
+                    concept_id=str(i),
                     document_id=document_id, 
                     key_concept_name=concept_name, 
                     vector_store=vector_store
