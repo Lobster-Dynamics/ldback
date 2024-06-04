@@ -29,14 +29,4 @@ class FirebaseKeyConceptRepo(IKeyConceptRepo):
 
     def get(self, id: str): ...
 
-    def new_uuid(self) -> str:
-        while True:
-            key_concept_id = str(uuid4())
-            if (
-                not self.db.collection("Documents")
-                .document(key_concept_id)
-                .get()
-                .exists
-            ):
-                break
-        return key_concept_id
+    pass

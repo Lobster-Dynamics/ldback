@@ -1,5 +1,6 @@
+from typing import List, Optional
 from uuid import uuid1
-from typing import List
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -8,5 +9,5 @@ class KeyConcept(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid1()))
     name: str = Field(..., description="Name of the key concept")
-    description: str = Field(..., description="Description of the key concept")
-    relationships: List[str] = Field(default_factory=list, description="List of related concepts")
+    description: Optional[str] = None
+    relationships: Optional[List[str]] = None
