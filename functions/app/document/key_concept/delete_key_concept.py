@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify
 from infrastructure.firebase.persistence.repos.keyconcept_repo import \
     FirebaseKeyConceptRepo
 
-from . import document_blueprint
+from .. import document_blueprint
 
 
 @document_blueprint.route(
