@@ -5,6 +5,7 @@ from infrastructure.firebase.persistence.repos.document_repo import \
     FirebaseDocumentRepo
 from infrastructure.firebase.persistence.repos.user_repo import \
     FirebaseUserRepo
+from datetime import datetime
 
 from . import directory_blueprint
 
@@ -37,10 +38,13 @@ def get_directory_handle(id: str):
     owner_ids: set = {directory["owner_id"]}
     owner_name_dict: dict = {}
 
+    def format_date(date):
+        return date.strftime("%d/%m/%Y")
+
     # Add name and extension to the contained items
     for item in directory["contained_items"]:
         if item["item_type"] == "DIRECTORY":
-            contained_item = dir_repo.get(str(item["item_id"]))
+            contained_item = dir_repo.get_reduced(str(item["item_id"]))
         elif item["item_type"] == "DOCUMENT":
             contained_item = doc_repo.get_reduced(str(item["item_id"]))
 
@@ -52,6 +56,7 @@ def get_directory_handle(id: str):
 
         item["name"] = contained_item.name
         item["owner_id"] = contained_item.owner_id
+        item["upload_date"] = format_date(contained_item.upload_date)
         if item["item_type"] == "DOCUMENT":
             item["extension"] = contained_item.extension
         owner_ids.add(item["owner_id"])

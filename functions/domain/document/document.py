@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date,datetime
 from typing import List, Optional
 from enum import Enum
 
@@ -89,7 +89,10 @@ class ParsedLLMInput(BaseModel):
     content: List[str] = Field()
     image_sections: Optional[List[DocumentImage]] = Field(None,alias="imageSections")
 
-
+class ExplanationFragment(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    titulo: str = Field()
+    texto: str = Field()
 
 class Document(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -108,3 +111,5 @@ class Document(BaseModel):
     relationships: Optional[List[Relationship]] = None
     wordcloudinfo: Optional[List[WordCloud]] = None
     past_messages: Optional[List[Message]] = Field(None, alias="pastMessages")
+    historicexplanations: Optional[List[ExplanationFragment]] = None
+    upload_date: datetime = Field(alias="uploadDate")

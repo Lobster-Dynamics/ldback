@@ -57,7 +57,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         except json.decoder.JSONDecodeError as inst:
             raise BaseException("OPENAI MODEL RETURN NON JSON STRING")
 
-    def _extract_bibliographic_info(self, document_id: str, vector_store: IVectorStore) -> BiblioGraphicInfo:
+    def _extract_bibliographic_info(self, document_id: str, vector_store: IVectorStore) -> BiblioGraphicInfo | None:
         bibliographic_info_json_schema = json.dumps(
             BiblioGraphicInfo.model_json_schema()
         )
@@ -81,7 +81,10 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         The title of the text MUST be within the document, if you cannot find a title within the document, then just set the "title" parameter to "Unknown".
         """
         raw_bibliographic_info_obj = self._get_json_response(prompt)
-        return BiblioGraphicInfo.model_validate(raw_bibliographic_info_obj)
+        try: 
+            return BiblioGraphicInfo.model_validate(raw_bibliographic_info_obj)
+        except BaseException as inst:
+            return None
 
     def _extract_raw_key_concepts_of_fragment(self, text_fragment: str) -> List[str]:
         prompt = f"""
@@ -196,10 +199,11 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         father_key_concept_json_string = json.dumps(father_key_concept_json, indent=3)
         
         key_concepts_strings = ""
-        for key_concept in key_concepts:
-            key_concept_json = key_concept.model_dump()
-            key_concept_json["relationships"] = []
-            key_concepts_strings += json.dumps(key_concept_json, indent=3) + "\n"
+        for kkey_concept in key_concepts:
+            if kkey_concept.id != key_concept.id:
+                key_concept_json = kkey_concept.model_dump()
+                key_concept_json["relationships"] = []
+                key_concepts_strings += json.dumps(key_concept_json, indent=3) + "\n"
         
         chunks_likeley_to_define_key_concept = vector_store.get_similar_chunks(
             document_id=document_id, text=key_concept.name, k=4
@@ -208,19 +212,29 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         for chunk in chunks_likeley_to_define_key_concept:
             likeley_to_define_text += chunk.text + " "
         
+
         prompt = f"""
-        Consider the following FATHER CONCEPT: {father_key_concept_json_string} \n
-        Also consider the following information about that key concept: \n 
-        {likeley_to_define_text}
-        Also consider the following key concepts: 
+        The task that you should perform is the following.\n 
+        I am going to give you a MAIN CONCEPT and a list of other concepts. \n
+        If there is a necessity to understand the MAIN CONCEPT to also understand \n 
+        a concept of the list of other concepts, then those concepts are related. \n
+        This is the MAIN CONCEPT: {father_key_concept_json_string} \n
+        
+        The following text should give you more information about the meaning of the MAIN CONCEPT: \n 
+        "{likeley_to_define_text}"
+        
+        The list of the other concepts is the following: 
         {key_concepts_strings} \n
+        
         Given all the information that I just provided you, please give me a json object that has \n
         an attribute called "relationships", this attribute is a list of json objects which represent relationships \n 
-        THE FATHER CONCEPT OF ALL RELATIONSHIPS is the concept that I first gave you: "{key_concept.name}". \n
-        All the items of the relationships attribute must represent a relationship between the father concept and the rest of the concepts that I gave you if \n
-        there is such a relationship.\n 
+        . Each relationship is an association between the MAIN CONCEPT and another concept from the list of other concepts that I gave you.
+        In each relationship it is necesarry that the MAIN CONCEPT is necesarry to understand the other concept of the relationship.\n
+        Only provide the realationships that you consider to be true and do not add extra unecessary relationships. \n
+        Also, the MAIN CONCEPT can have AT MOST ONE relationship with each other concept of the list that I gave you. \n 
         Every item of the attribute "relationships" that you provide must follow the following json schema: 
         {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship"}'} \n
+        The description of the relationships should be in the same language as the text that gives you more information about the MAIN CONCEPT.
         """
 
         raw_relationships = self._get_json_response(prompt)

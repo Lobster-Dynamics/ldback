@@ -4,6 +4,7 @@ from firebase_admin import auth
 from firebase_admin.exceptions import FirebaseError
 import requests
 import json
+import datetime
 
 from app.middleware.decorators import exclude_verify_token
 from infrastructure.firebase.persistence.repos.user_repo import FirebaseUserRepo
@@ -38,6 +39,7 @@ def create_account_email_handle():
     # Reference to user & directory repo
     user_repo = FirebaseUserRepo()
     directory_repo = FirebaseDirectoryRepo()
+    now = datetime.datetime.now()
 
     # Validate format of email, name and lastname
     try:
@@ -52,11 +54,12 @@ def create_account_email_handle():
         directory = Directory(
             id=user.root_directory_id,
             name="Mi Unidad",
-            ownerId=""
+            ownerId="",
+            uploadDate=now
         )
 
-    except ValidationError:
-        return jsonify(msg=f"Email and Lastname must be between 4 and 15 characters. Email must be valid"), 400
+    except Exception as e:
+        return jsonify(msg=f"Email and Lastname must be between 4 and 15 characters. Email must be valid: {e}"), 400
 
     try:
         # Create user in Firebase Auth

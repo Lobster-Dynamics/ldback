@@ -12,9 +12,6 @@ from . import directory_blueprint
 def get_shared_handle():
     token = request.token
 
-    if not token:
-        return jsonify(msg="Token is missing"), 400
-
     dir_repo = FirebaseDirectoryRepo()
     doc_repo = FirebaseDocumentRepo()
     user_repo = FirebaseUserRepo()
@@ -35,7 +32,7 @@ def get_shared_handle():
         for item in shared_items:
             item_sent = {}
             if item.type == "DIRECTORY":
-                shared_item = dir_repo.get(str(item.type_id))
+                shared_item = dir_repo.get_reduced(str(item.type_id))
             elif item.type == "DOCUMENT":
                 shared_item = doc_repo.get_reduced(str(item.type_id))
 
