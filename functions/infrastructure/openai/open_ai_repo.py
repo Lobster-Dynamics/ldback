@@ -63,7 +63,7 @@ Fin de FRAGMENTO A EXPLICAR
 INSTRUCCIONES:
 Proporciona un título breve y conciso para la siguiente explicación.
 No contestes nada mas que con el titulo que generes no le agregues un preambulo o una explicacion antes, solo el titulo.
-
+NUNCA agregues comillas al titulo.
 
 EXPLICACIÓN:
 {explanation_text}
