@@ -26,10 +26,7 @@ def get_message_handle():
     except Exception:
         return jsonify(msg=f"Failed to set id and query."), 401
     try:
-        response = bot.extract_message(document_id=id, user_id = token["uid"], text=query,)
-        response = bot._all_messages(document_id=id, user_id = token["uid"])
-        if isinstance(response, list) and all(isinstance(message, MessageContent) for message in response):
-            response = [message.model_dump() for message in response]
-        return jsonify(response)
+        response = bot.extract_message(document_id=id, user_id = token["uid"], text=query)
+        return jsonify(response.model_dump())
     except Exception as e:
         return jsonify({"msg": f"failed to get message: {e}"})

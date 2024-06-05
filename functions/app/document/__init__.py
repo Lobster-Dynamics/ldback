@@ -17,3 +17,4 @@ from .share_document import *
 from .key_concept.add_key_concept import *
 from .key_concept.delete_key_concept import *
 from .get_explanations import *
+from .get_highlights import *
