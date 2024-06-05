@@ -9,6 +9,8 @@ from infrastructure.vector_store.vector_store import VectorStore
 
 @document_blueprint.route("/get_message", methods=["POST"])
 def get_message_handle():
+    token = request.token
+    
     bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"], vector_store=VectorStore(pc_api_key=os.environ["PINECONE_API_KEY"], op_api_key=os.environ["OPENAI_API_KEY"]))
     try:
         data = request.get_json()
@@ -19,12 +21,11 @@ def get_message_handle():
     query:str
     try:
         id = data["id"]
-        userid = data["userid"]
         query = data["query"]
     except Exception:
         return jsonify(msg=f"Failed to set id and query."), 401
     try:
-        response = bot.extract_message(document_id=id, user_id = userid, text=query,)
+        response = bot.extract_message(document_id=id, user_id = token["uid"], text=query,)
         print(response)
         return jsonify({"msg" : f"{response.message}"})
     except Exception as e:
