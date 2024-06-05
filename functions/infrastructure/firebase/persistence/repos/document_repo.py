@@ -145,7 +145,7 @@ class FirebaseDocumentRepo(IDocumentRepo):
         if not doc.exists:
             return None
 
-        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages"]
+        subcollections = ["ParsedLLMInput", "Summary", "KeyConcepts", "PastMessages", "Relationships"]
 
         try:
             # Start a batch for batch deletion
