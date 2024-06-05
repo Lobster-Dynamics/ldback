@@ -1,4 +1,5 @@
 from flask import jsonify, request
+from pydantic import ValidationError
 
 from infrastructure.firebase.persistence.repos.directory_repo import FirebaseDirectoryRepo
 from domain.directory import Directory
@@ -42,15 +43,18 @@ def create_directory_handle():
 
     # Create a new entry in the directory collection
     now = datetime.datetime.now()
-
-    directory = Directory(
-        id=new_uuid,
-        name=name,
-        ownerId=token["user_id"],
-        containedItems=[],
-        parentId=directory_id,
-        uploadDate=now
-    )
+    
+    try:
+        directory = Directory(
+            id=new_uuid,
+            name=name,
+            ownerId=token["user_id"],
+            containedItems=[],
+            parentId=directory_id,
+            uploadDate=now
+        )
+    except ValidationError as e:
+        return jsonify(msg=f"Directory Name must be between 2 and 15 characters."), 400
     
     contained_item = ContainedItem(
         itemId=new_uuid,

@@ -58,8 +58,8 @@ def create_account_email_handle():
             uploadDate=now
         )
 
-    except Exception as e:
-        return jsonify(msg=f"Email and Lastname must be between 4 and 15 characters. Email must be valid: {e}"), 400
+    except ValidationError as e:
+        return jsonify(msg=f"Email and Lastname must be between 2 and 15 characters."), 400
 
     try:
         # Create user in Firebase Auth
