@@ -6,27 +6,25 @@ from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocu
 from . import document_blueprint
 from infrastructure.openai.chat_answers import OpenAIChatExtractor
 from infrastructure.vector_store.vector_store import VectorStore
-from domain.document.ichat_answers import MessageContent
 
-@document_blueprint.route("/get_message", methods=["POST"])
-def get_message_handle():
+@document_blueprint.route("/get_highlights", methods=["POST"])
+def get_highlights_handle():
     token = request.token
     
     bot = OpenAIChatExtractor(os.environ["OPENAI_API_KEY"], vector_store=VectorStore(pc_api_key=os.environ["PINECONE_API_KEY"], op_api_key=os.environ["OPENAI_API_KEY"]))
     try:
         data = request.get_json()
     except Exception:
-        return jsonify(msg=f"Request must contain both ids and query."), 400
+        return jsonify(msg=f"Request must contain both ids"), 400
     
     id:str
-    query:str
     try:
+        doc_id = data["doc_id"]
         id = data["id"]
-        query = data["query"]
     except Exception:
-        return jsonify(msg=f"Failed to set id and query."), 401
+        return jsonify(msg=f"Failed to set id."), 401
     try:
-        response = bot.extract_message(document_id=id, user_id = token["uid"], text=query)
-        return jsonify(response.model_dump())
+        response = bot._highlighted_chunks(document_id=doc_id, user_id = token["uid"], message_id=id)
+        return jsonify(response)
     except Exception as e:
-        return jsonify({"msg": f"failed to get message: {e}"})
+        return jsonify({"msg": f"failed to get text to highlight: {e}"})
