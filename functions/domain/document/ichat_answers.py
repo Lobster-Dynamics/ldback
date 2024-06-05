@@ -9,7 +9,7 @@ from .ivector_store import IVectorStore, ResultingChunk
 class MessageContent(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    # id: str = Field()
+    id: str = Field()
     message: str = Field()
     role: str = Field()
 

@@ -31,6 +31,19 @@ class OpenAIChatExtractor(IChatAnswers):
             messages.append(MessageContent(message=res["content"], role=res["role"]))
         return messages
     
+    def _highlighted_chunks(self, document_id: str, user_id: str, vector_store: IVectorStore, message_id: str) -> List[str]:
+        query = self.db.collection("Documents").document(document_id).collection("PastMessages").document(message_id)
+        result = query.stream()
+        message = ""
+        result.to_dict()
+        message = result["content"]
+        chunks = vector_store.get_similar_chunks(document_id, 3, message)
+        highlights = []
+        for chunk in chunks:
+            highlights.append(chunk.text)
+        return highlights
+            
+
     def _all_messages(self, document_id: str, user_id: str) -> List[MessageContent]:
         doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages")
         query = doc_ref.where(filter=FieldFilter("userID", "==", user_id)).order_by("timestamp", direction=firestore.Query.DESCENDING)
@@ -45,7 +58,9 @@ class OpenAIChatExtractor(IChatAnswers):
         
         return reversed_message
 
-    def _message_completion(self, document_id: str, user_id: str, text: str,vector_store: IVectorStore) -> str:
+
+
+    def _message_completion(self, document_id: str, user_id: str, text: str, vector_store: IVectorStore) -> MessageContent:
         chunks = vector_store.get_similar_chunks(document_id, 3, text)
         text_block = "\n".join([chunk.text for chunk in chunks])
         message_id = str(uuid.uuid1())
@@ -102,12 +117,9 @@ class OpenAIChatExtractor(IChatAnswers):
         
         doc_ref = self.db.collection("Documents").document(document_id).collection("PastMessages").document(response_id)
         doc_ref.set({"id": response_id, "content": response.choices[0].message.content, "userID": user_id, "role": "chat", "documentID": document_id, "timestamp": now})
-        return response.choices[0].message.content
+        #Se regresa el Id de la pregunta aunque no sea el ID de este mensaje en especifico para facilitar highlighteo en frontend.
+        return MessageContent(message=response.choices[0].message.content, id= message_id, role="chat")
 
     def extract_message(self, document_id: str, text: str, user_id: str) -> MessageContent:
         message = self._message_completion(document_id=document_id, text=text, vector_store=self._vector_store,user_id=user_id)
-        print(message)
-        return MessageContent(
-            message=message,
-            role="chat"
-        )
+        return message

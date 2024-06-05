@@ -6,6 +6,7 @@ from infrastructure.firebase.persistence.repos.document_repo import FirebaseDocu
 from . import document_blueprint
 from infrastructure.openai.chat_answers import OpenAIChatExtractor
 from infrastructure.vector_store.vector_store import VectorStore
+from domain.document.ichat_answers import MessageContent
 
 @document_blueprint.route("/get_message", methods=["POST"])
 def get_message_handle():
@@ -26,7 +27,9 @@ def get_message_handle():
         return jsonify(msg=f"Failed to set id and query."), 401
     try:
         response = bot.extract_message(document_id=id, user_id = token["uid"], text=query,)
-        print(response)
-        return jsonify({"msg" : f"{response.message}"})
+        response = bot._all_messages(document_id=id, user_id = token["uid"])
+        if isinstance(response, list) and all(isinstance(message, MessageContent) for message in response):
+            response = [message.model_dump() for message in response]
+        return jsonify(response)
     except Exception as e:
         return jsonify({"msg": f"failed to get message: {e}"})
