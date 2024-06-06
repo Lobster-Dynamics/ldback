@@ -42,17 +42,14 @@ class TextAnalyzer:
         filtered_words = []
         for word in words:
             # Detect the language of the word
-            if not re.search(r'\d', word):
-                try:
-                    lang = detect(word.lower())
-                    # Apply appropriate stopwords filtering
-                    if lang == "en" and word.lower() not in stop_words_en:
-                        filtered_words.append(word)
-                    elif lang == "es" and word.lower() not in stop_words_es:
-                        filtered_words.append(word)
-                except Exception:
-                    # If language detection fails, keep the word
+            if not re.search(r'\d', word) or len(word) == 1:
+                lang = detect(word.lower())
+                # Apply appropriate stopwords filtering
+                if lang == "en" and word.lower() not in stop_words_en:
                     filtered_words.append(word)
+                elif lang == "es" and word.lower() not in stop_words_es:
+                    filtered_words.append(word)
+                
 
         return filtered_words
 
