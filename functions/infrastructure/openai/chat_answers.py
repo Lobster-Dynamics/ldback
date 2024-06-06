@@ -17,7 +17,7 @@ import datetime
 class OpenAIChatExtractor(IChatAnswers):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
         self._vector_store = vector_store
         self.db = firestore.client()
 
