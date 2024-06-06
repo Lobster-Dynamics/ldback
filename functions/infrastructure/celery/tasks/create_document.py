@@ -13,7 +13,7 @@ logging.basicConfig(filename="textbot.log", level=logging.INFO)
 from domain.events import DocumentCreatedEvent
 
 from domain.directory.directory import ContainedItem, ContainedItemType
-from domain.document.document import Document, KeyConcept, WordCloud
+from domain.document.document import Document, KeyConcept, WordCloud, ParsedLLMInput
 from domain.document.parse import DocumentProcessor
 from domain.events import DocumentCreatedEvent
 from ...firebase.persistence.firebase_file_storage import (FileMimeType,
@@ -139,7 +139,7 @@ def create_document(
         idRawDoc=url,
         name=filename,
         extension=type_file,
-        parsedLLMInput=pll,
+        parsedLLMInput=ParsedLLMInput(content=chunks, imageSections=pll.image_sections),
         usersWithAccess=[],
         biblioGraficInfo=None,  # Error, esto no funciona con docx asi que esta desactivado
         summary=text_insight.summary,
