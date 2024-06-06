@@ -22,7 +22,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
     def __init__(self, api_key: str):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
 
     def _fragment_iterator(self, chunks: List[str], k: int): 
         for i in range(math.ceil(len(chunks) / k)):
