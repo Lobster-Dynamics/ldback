@@ -1,17 +1,17 @@
-SEND_DOCUMENT_TEMPLATE = """
+SHARE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Document Notification</title>
+    <title>Document/Directory Shared</title>
     <style>
-        body {
+        body {{
             font-family: Arial, sans-serif;
             line-height: 1.6;
             color: #333;
-        }
-        .container {
+        }}
+        .container {{
             width: 90%;
             max-width: 600px;
             margin: 0 auto;
@@ -19,107 +19,56 @@ SEND_DOCUMENT_TEMPLATE = """
             border: 1px solid #ddd;
             border-radius: 10px;
             background-color: #f9f9f9;
-        }
-        .header {
-            background-color: #4CAF50;
+        }}
+        .header {{
+            background-color: #AC73D9;
             color: white;
             padding: 10px;
             text-align: center;
             border-top-left-radius: 10px;
             border-top-right-radius: 10px;
-        }
-        .content {
+        }}
+        .content {{
             padding: 20px;
-        }
-        .footer {
+        }}
+        .footer {{
             text-align: center;
             margin-top: 20px;
             font-size: 0.9em;
             color: #777;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>New Document Notification</h2>
-        </div>
-        <div class="content">
-            <p>Dear {recipient_name},</p>
-            <p>We are pleased to inform you that a new document has been sent to you. Please review the document at your earliest convenience.</p>
-            <p>If you have any questions or need further assistance, do not hesitate to contact us.</p>
-            <p>Best regards,</p>
-            <p>{sender_name}<br>
-            {sender_position}<br>
-            {sender_company}</p>
-        </div>
-        <div class="footer">
-            <p>This is an automated message, please do not reply.</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-RESET_PASSWORD_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-        .container {
-            width: 90%;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background-color: #f9f9f9;
-        }
-        .header {
-            background-color: #4CAF50;
+        }}
+        .button {{
+            background-color: #AC73D9;
             color: white;
-            padding: 10px;
-            text-align: center;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
-        }
-        .content {
-            padding: 20px;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #777;
-        }
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }}
+        .button:hover {{
+            background-color: #8a5cb6;
+        }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2>Password Reset</h2>
+            <h2>{subject}</h2>
         </div>
         <div class="content">
-            <p>Hello,</p>
-            <p>Follow this link to reset your FridaRPE password for your {recipient_email} account.</p>
-            <p><a href="{reset_link}" class="button">Reset Password</a></p>
-            <p>If you didn't ask to reset your password, you can ignore this email.</p>
-            <p>Thanks,</p>
-            <p>Your FridaRPE team</p>
+            <p>Hola {recipient_name},</p>
+            <p>{sharer_name} te ha compartido un {shared_item_type}.</p>
+            <a href="{link}" class="button">Ver {shared_item_type}</a>
+            <p>Gracias,</p>
+            <p>Tu equipo de FridaRPE</p>
         </div>
         <div class="footer">
-            <p>This is an automated message, please do not reply.</p>
+            <p>Este es un mensaje automatizado, por favor no responda.</p>
         </div>
     </div>
 </body>
 </html>
 """
-

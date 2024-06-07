@@ -8,6 +8,8 @@ from infrastructure.firebase.persistence.repos.user_repo import \
     FirebaseUserRepo
 from firebase_admin import firestore
 
+from templates.email_templates import SHARE
+
 from . import directory_blueprint
 
 db = firestore.client()
@@ -72,15 +74,31 @@ def share_directory_handle():
 
 
         # Se manda un correo a la persona que se le compartio el directorio
+        sharer_name = f"{actual_user.name} {actual_user.lastname}"
+        recipient_name = f"{shared_user.name} {shared_user.lastname}"
+        shared_item_type = "directorio"
+        link = "https://frida-research.web.app"
+        subject = "Se te ha compartido un documento"
 
-        email_service = current_app.email_service
+        try:
+            share_html = SHARE.format(
+                sharer_name=sharer_name,
+                recipient_name=recipient_name,
+                shared_item_type=shared_item_type,
+                link=link,
+                subject=subject,
+            )
 
-        email_service.send_email(
-            f"{actual_user.name} {actual_user.lastname} "
-            "te compartio un directorio",
-            "Se te ha compartido un directorio",
-            shared_email,
-        )
+            email_service = current_app.email_service
+
+            email_service.send_email(
+                "Se te ha te compartio un directorio!",
+                share_html,
+                shared_email,
+            )
+
+        except Exception as e:
+            return jsonify(msg="Error mandando correo", error=str(e)), 500
 
         return jsonify(msg="Directory shared successfully"), 200
 

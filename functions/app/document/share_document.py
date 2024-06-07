@@ -1,10 +1,11 @@
 from domain.user.user import SharedItem
+from firebase_admin import firestore
 from flask import current_app, jsonify, request
 from infrastructure.firebase.persistence.repos.document_repo import \
     FirebaseDocumentRepo
 from infrastructure.firebase.persistence.repos.user_repo import \
     FirebaseUserRepo
-from firebase_admin import firestore
+from templates.email_templates import SHARE
 
 from . import document_blueprint
 
@@ -42,7 +43,7 @@ def share_document():
         except ValueError as e:
             return jsonify(msg=str(e.args[0])), 404
         except Exception as e:
-            return jsonify(msg="An error occurred",error=str(e.args[0])), 500
+            return jsonify(msg="An error occurred", error=str(e.args[0])), 500
 
         # Revisar si el documento pertenece al usuario
         if document.owner_id != uuid_user:
@@ -54,31 +55,43 @@ def share_document():
             privilegeLevel=priority, type="DOCUMENT", typeId=document_id
         )
 
-
         try:
             with db.transaction() as transaction:
                 # Se añade el objeto compartido al usuario
-                user_repo.add_shared_item(transaction,shared_item,shared_user.id)
+                user_repo.add_shared_item(transaction, shared_item, shared_user.id)
                 # Se añade al documento
-                doc_repo.share_document(
-                    transaction,
-                    document_id,
-                    shared_user.id)
+                doc_repo.share_document(transaction, document_id, shared_user.id)
         except ValueError as e:
             return jsonify(msg=str(e.args[0])), 404
         except Exception as e:
             return jsonify(msg=str(e.args[0])), 500
 
         # Se manda un correo a la persona que se le compartio el directorio
+        sharer_name = f"{actual_user.name} {actual_user.lastname}"
+        recipient_name = f"{shared_user.name} {shared_user.lastname}"
+        shared_item_type = "documento"
+        link = "https://frida-research.web.app"
+        subject = "Se te ha compartido un documento"
 
-        email_service = current_app.email_service
+        try:
+            share_html = SHARE.format(
+                sharer_name=sharer_name,
+                recipient_name=recipient_name,
+                shared_item_type=shared_item_type,
+                link=link,
+                subject=subject,
+            )
 
-        email_service.send_email(
-            f"{actual_user.name} {actual_user.lastname} te compartio un documento",
-            "Se te ha compartido un documento",
-            shared_email
-         )
+            email_service = current_app.email_service
 
+            email_service.send_email(
+                "Se te ha te compartio un documento!",
+                share_html,
+                shared_email,
+            )
+
+        except Exception as e:
+            return jsonify(msg="Error mandando correo", error=str(e)), 500
 
         return jsonify(msg="Shared document successfully"), 200
 
