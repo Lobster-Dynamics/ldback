@@ -22,7 +22,7 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
     def __init__(self, api_key: str):
         # TODO: parametryze configuration params
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
 
     def _fragment_iterator(self, chunks: List[str], k: int): 
         for i in range(math.ceil(len(chunks) / k)):
@@ -234,13 +234,11 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
         Only provide the realationships that you consider to be true and do not add extra unecessary relationships. \n
         Also, the MAIN CONCEPT can have AT MOST ONE relationship with each other concept of the list that I gave you. \n 
         Every item of the attribute "relationships" that you provide must follow the following json schema: 
-        {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship"}'} \n
-        The description of the relationships should be in the same language as the text that gives you more information about the MAIN CONCEPT.
+        {r'{"child_concept_id": "Id of the concept dependent in father concept", "description": "description of the relationship and how the father concept relates to the child concept. a description of the interaction of both concepts"}'} \n
+        The description of the relationships should be in the same language as the text that gives you more information about the MAIN CONCEPT. \n
         """
 
         raw_relationships = self._get_json_response(prompt)
-        logger.info("RAW_RELATIONSHIPS_HERE")
-        logger.info(raw_relationships)
 
         for relation in raw_relationships["relationships"]: 
             relationships.append(
@@ -263,11 +261,13 @@ class OpenAITextInsightExtractor(ITextInsightExtractor):
             {key_concept.id: key_concept for key_concept in key_concepts}
 
         relationships = []
-        for key_concept in key_concepts:
+        for i, key_concept in enumerate(key_concepts):
+            if i == len(key_concepts) - 1:
+                continue
             # get concepts in which key concept is father
             relationships_in_which_key_is_father = self._extract_relationships_in_which_concept_is_father(
                 key_concept=key_concept, 
-                key_concepts=key_concepts, 
+                key_concepts=key_concepts[i+1:], 
                 vector_store=text_vector_store, 
                 document_id=document_id
             )

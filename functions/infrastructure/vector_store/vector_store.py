@@ -9,7 +9,7 @@ class VectorStore(IVectorStore):
     def __init__(self, op_api_key: str, pc_api_key: str):
         # TODO: parametryze configuration params
         self.op = OpenAI(api_key=op_api_key)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
         self.pc_model = "text-embedding-3-small"
         self.pc = Pinecone(api_key=pc_api_key)
         self.index=self.pc.Index("embedding-storage")

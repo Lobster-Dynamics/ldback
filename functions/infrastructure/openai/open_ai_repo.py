@@ -17,7 +17,7 @@ import datetime
 class OpenAIFragmentExtractor(IFragmentExplanation):
     def __init__(self, api_key: str, vector_store: IVectorStore):
         self.client = OpenAI(api_key=api_key)
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-4o"
         self._vector_store = vector_store
         self.db = firestore.client()
 
@@ -63,7 +63,7 @@ Fin de FRAGMENTO A EXPLICAR
 INSTRUCCIONES:
 Proporciona un título breve y conciso para la siguiente explicación.
 No contestes nada mas que con el titulo que generes no le agregues un preambulo o una explicacion antes, solo el titulo.
-
+NUNCA agregues comillas al titulo.
 
 EXPLICACIÓN:
 {explanation_text}

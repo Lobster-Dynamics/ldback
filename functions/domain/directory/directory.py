@@ -28,7 +28,7 @@ class Directory(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
     id: UUID = Field()
-    name: str = Field()
+    name: str = Field(min_length=2, max_length=30)
     owner_id: str = Field(alias="ownerId")
     contained_items: List[ContainedItem] = Field(None, alias="containedItems")
     shared_users: Optional[List[str]] = Field(None, alias="sharedUsers")
