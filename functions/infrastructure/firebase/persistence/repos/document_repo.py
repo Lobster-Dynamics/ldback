@@ -120,6 +120,15 @@ class FirebaseDocumentRepo(IDocumentRepo):
 
         result["parsedLLMInput"] = ParsedLLMInput(
             content=parsed_input[0]["content"], image_sections=None)
+        
+        documentpartpath = result["idRawDoc"].split("gs://")[1].split("/")
+        documentbucket = documentpartpath[0]
+        documentpath = "/".join(documentpartpath[1:])
+        docurl = FirebaseDocumentRepo.get_public_url(
+            documentbucket, documentpath
+        )
+
+        result["document_url"] = docurl
 
         result["summary"] = subcollections_data["Summary"][0]
         result["keyConcepts"] = subcollections_data["KeyConcepts"]

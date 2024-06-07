@@ -113,3 +113,4 @@ class Document(BaseModel):
     past_messages: Optional[List[Message]] = Field(None, alias="pastMessages")
     historicexplanations: Optional[List[ExplanationFragment]] = None
     upload_date: datetime = Field(alias="uploadDate")
+    document_url: Optional[str] = None
