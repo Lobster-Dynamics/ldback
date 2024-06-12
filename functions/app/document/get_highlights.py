@@ -25,7 +25,7 @@ def get_highlights_handle():
         return jsonify(msg=f"Failed to set id."), 401
     try:
         chunks = bot._highlighted_chunks(document_id=doc_id, user_id = token["uid"], message_id=id)
-        response = [(chunk.index, chunk.text) for chunk in chunks]
-        return jsonify({"content": f"{response}"})
+        response = [{"index": chunk.index, "content": chunk.text} for chunk in chunks]
+        return jsonify(response)
     except Exception as e:
         return jsonify({"msg": f"failed to get text to highlight: {e}"})
