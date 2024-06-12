@@ -31,16 +31,13 @@ class OpenAIChatExtractor(IChatAnswers):
             messages.append(MessageContent(message=res["content"], mes_id=res["id"], role=res["role"]))
         return messages
     
-    def _highlighted_chunks(self, document_id: str, user_id: str, message_id: str) -> List[str]:
+    def _highlighted_chunks(self, document_id: str, user_id: str, message_id: str) -> List[ResultingChunk]:
         vector_store = self._vector_store
         query = self.db.collection("Documents").document(document_id).collection("PastMessages").document(message_id)
         result = query.get()
         message = result.to_dict()
         chunks = vector_store.get_similar_chunks(document_id, 3, str(message["content"]))
-        highlights = []
-        for chunk in chunks:
-            highlights.append(chunk.text)
-        return highlights
+        return chunks
             
 
     def _all_messages(self, document_id: str, user_id: str) -> List[MessageContent]:
