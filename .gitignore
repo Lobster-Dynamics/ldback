@@ -77,3 +77,6 @@ cert/*
 
 # vscode settings
 .vscode/
+
+# test output 
+report.html
