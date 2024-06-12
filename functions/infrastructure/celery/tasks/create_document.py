@@ -102,8 +102,10 @@ def create_document(
         op_api_key=os.environ["OPENAI_API_KEY"],
         pc_api_key=os.environ["PINECONE_API_KEY"],
     )
+    index = 0
     for chunk in chunks:
-        vector_storage.insert(document_id=document_id, text=chunk)
+        vector_storage.insert(document_id=document_id, text=chunk, index=index)
+        index += 1
 
     # Genera el insight
 

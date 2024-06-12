@@ -9,6 +9,7 @@ class ResultingChunk(BaseModel):
     id: str = Field()
     text: str = Field()
     similarity: float = Field()
+    index: int = Field()
 
 class ResultingMessage(BaseModel):
     model_config = ConfigDict(frozen=True)

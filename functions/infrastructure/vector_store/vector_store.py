@@ -33,7 +33,7 @@ class VectorStore(IVectorStore):
     #    )
     #    return interaction_id
 
-    def insert(self, document_id: str, text: str) -> str: 
+    def insert(self, document_id: str, text: str, index: int) -> str: 
         chunk_id = str(uuid.uuid1())
 
         response = self.op.embeddings.create(
@@ -42,7 +42,7 @@ class VectorStore(IVectorStore):
         )
         self.index.upsert(
             vectors=[
-                {"id":chunk_id, "values":response.data[0].embedding, "metadata":{"ChunkText":text}}
+                {"id":chunk_id, "values":response.data[0].embedding, "metadata":{"ChunkText":text, "index":index}}
             ],
             namespace=document_id
         )
@@ -93,6 +93,7 @@ class VectorStore(IVectorStore):
             chunks.append(ResultingChunk(
                 id=result.matches[i].id,
                 text=result.matches[i].metadata["ChunkText"],
-                similarity=result.matches[i].score
+                similarity=result.matches[i].score,
+                index=result.matches[i].metadata["index"]
             ))
         return chunks
