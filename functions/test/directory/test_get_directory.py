@@ -1,3 +1,5 @@
+import os
+
 from flask.testing import FlaskClient
 
 from ..test_pytest_shared_fixtures import *
@@ -7,7 +9,7 @@ def test_access_denied_to_directory(
     client: FlaskClient
 ):
     res = client.get(
-        "/directory/get_directory/1eb23e40-d192-43f6-814e-ce6a3b74bebe", 
+        f"/directory/get_directory/{os.environ['EXISTENT_DIRECTORY_ID_THAT_USER_A_HAS_NO_ACESS_TO']}", 
         headers=user_a_auth_headers
     )
     assert res.status_code == 401
@@ -17,7 +19,7 @@ def test_successfully_get_root_directory_of_user_a(
     client: FlaskClient
 ):
     res = client.get(
-        "/directory/get_directory/c9b4194e-34f5-4336-bec4-bd661ce110d2", 
+        f"/directory/get_directory/{os.environ['TESTING_USER_A_ROOT_DIRECTORY_ID']}", 
         headers=user_a_auth_headers
     )
     assert res.status_code == 200

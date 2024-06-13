@@ -13,6 +13,6 @@ def test_insert():
 def test_get_similar():
     test_prompt="Hello, this is a test to test in the test about testing the vector test give me tests test I love tests tests are great I am normal and I love tests."
     testing_vector = VectorStore(os.environ["OPENAI_API_KEY"], os.environ["PINECONE_API_KEY"])
-    testing_vector.insert(document_id="1", text=test_prompt)
+    testing_vector.insert(document_id="1", text=test_prompt, index=0)
     result = testing_vector.get_similar_chunks(document_id="1", k=2,text=test_prompt)
     testing_vector.deleteNamespace(document_id="1")
