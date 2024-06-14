@@ -70,7 +70,7 @@ def share_document():
         sharer_name = f"{actual_user.name} {actual_user.lastname}"
         recipient_name = f"{shared_user.name} {shared_user.lastname}"
         shared_item_type = "documento"
-        link = "https://frida-research.web.app"
+        link = f"https://frida-research.web.app/documento?id={document_id}"
         subject = "Se te ha compartido un documento"
 
         try:
