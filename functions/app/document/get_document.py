@@ -8,7 +8,7 @@ from . import document_blueprint
 
 @document_blueprint.route("/get_document/<id>", methods=["GET"])
 def get_document_handle(id):
-    print("hola")
+    # print("hola")
     # Se manda a llamar la clase de firebasedocumentsrepo
 
     repo = FirebaseDocumentRepo()

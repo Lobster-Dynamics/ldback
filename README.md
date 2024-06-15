@@ -16,6 +16,19 @@ pip freeze > .\requirements.txt
 # start development instance
 ```bash
 npx firebase emulators:start --only functions
+
+
+# run unittests from funcions directory
+
+cd functions
+python -m pytest ./test/parser/test_docx_parser.py
+python -m pytest ./test/
+
+# run with docker 
+
+cd docker 
+docker compose up
+=======
 ```
 ```bash
 python dev_app.py  

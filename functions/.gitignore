@@ -1,2 +1,6 @@
 cert
 cert/
+.api.env
+.test.env
+# only used to setup env variables
+pytest.ini

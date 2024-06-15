@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date,datetime
 from typing import List, Optional
 from enum import Enum
 
@@ -16,6 +16,12 @@ class UserWithAccessData(BaseModel):
 
     user_id: str = Field(alias="userId")
     privilege_level: UserPrivilegeLevelOnDocument = Field(alias="privilegeLevel")
+
+class WordCloud(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+
+    text: str = Field()
+    value: int = Field()
 
 
 class AuthorData(BaseModel):
@@ -58,10 +64,35 @@ class KeyConcept(BaseModel):
 class Relationship(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
 
+    id: str = Field()
     father_concept_id: str = Field(alias="fatherConceptId")
     child_concept_id: str = Field(alias="childConceptId")
     description: str = Field()
 
+class DocumentImage(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    location: str = Field()
+    url: str = Field()
+
+class Message(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    id: str = Field()
+    content: str = Field()
+    userID: str = Field()
+    role: str = Field()
+    documentID: str = Field()
+    timestamp: str = Field()
+
+
+class ParsedLLMInput(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    content: List[str] = Field()
+    image_sections: Optional[List[DocumentImage]] = Field(None,alias="imageSections")
+
+class ExplanationFragment(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)
+    titulo: str = Field()
+    texto: str = Field()
 
 class Document(BaseModel):
     model_config = ConfigDict(validate_assignment=True)
@@ -70,7 +101,7 @@ class Document(BaseModel):
     id_raw_doc: str = Field(alias="idRawDoc")
     name: str = Field(alias="name")
     extension: str = Field(alias="extension")
-    parsed_llm_input: Optional[List[str]] = Field(alias="parsedLLMInput")
+    parsed_llm_input: ParsedLLMInput = Field(None,alias="parsedLLMInput")
     users_with_access: List[UserWithAccessData] = Field(alias="usersWithAccess")
     bibliographic_info: Optional[BiblioGraphicInfo] = Field(
         None, alias="biblioGraficInfo"
@@ -78,3 +109,8 @@ class Document(BaseModel):
     summary: Optional[Summary] = None
     key_concepts: Optional[List[KeyConcept]] = Field(None, alias="keyConcepts")
     relationships: Optional[List[Relationship]] = None
+    wordcloudinfo: Optional[List[WordCloud]] = None
+    past_messages: Optional[List[Message]] = Field(None, alias="pastMessages")
+    historicexplanations: Optional[List[ExplanationFragment]] = None
+    upload_date: datetime = Field(alias="uploadDate")
+    document_url: Optional[str] = None

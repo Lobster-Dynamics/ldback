@@ -1,7 +1,6 @@
 {
   "properties": {
     "id": {
-      "format": "uuid",
       "title": "Id",
       "type": "string"
     },

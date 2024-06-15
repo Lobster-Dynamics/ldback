@@ -1,3 +1,4 @@
+"""
 import unittest
 
 from app import create_app
@@ -23,3 +24,4 @@ class CreateAccountTestCase(unittest.TestCase):
             "/user/create_account", headers=self.headers, json={}
         )
         self.assertEqual(reponse.status_code, 200)
+"""

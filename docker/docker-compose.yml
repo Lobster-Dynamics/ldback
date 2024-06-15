@@ -1,0 +1,55 @@
+# docker compose for the setup of development environment
+services:
+  rabbity:
+    image: rabbitmq:3-management 
+    ports: 
+      - "5672:5672"
+      - "15672:15672"
+  api: 
+    ports: 
+      - "5000:5000"
+    build: 
+      context: ../
+      dockerfile: ./docker/dockerfiles/api.Dockerfile
+    env_file:
+      - path: ../functions/.api.env 
+        required: true
+    environment:
+      AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes: 
+      - type: bind
+        source: ../functions
+        target: /api
+  worker: 
+    build: 
+      context: ../ 
+      dockerfile: ./docker/dockerfiles/worker.Dockerfile
+    env_file: 
+      - path: ../functions/.api.env 
+        required: true
+    environment:
+      AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
+    volumes: 
+      - type: bind 
+        source: ../functions
+        target: /api
+  notifications_server: 
+    ports: 
+      - "8000:8000"
+    build: 
+      context: ../ 
+      dockerfile: ./docker/dockerfiles/notifications_server.Dockerfile
+    env_file: 
+      - path: ../functions/.api.env 
+        required: true
+    environment:
+      AMQP_URL: "amqp://guest:guest@rabbity:5672/%2F"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes: 
+      - type: bind 
+        source: ../functions
+        target: /notsser
+# create service for emulator of firebase services

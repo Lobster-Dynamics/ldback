@@ -12,8 +12,9 @@ from . import user_blueprint
 @user_blueprint.route("/login_email", methods=["POST"])
 @exclude_verify_token
 def login_email_handle():
-    data = request.get_json()
-    if not data:
+    try:
+        data = request.get_json()
+    except Exception:
         return jsonify(msg=f"Email and Password must be set"), 400
 
     email: str
@@ -43,6 +44,6 @@ def login_email_handle():
         "refreshToken": auth_response["refreshToken"],
         "name": user_info["name"],
         "lastname": user_info["lastname"],
-        "rootDirectoryId": user_info["root_directory_id"],
+        "root_directory_id": user_info["rootDirectoryId"],
     }
     return jsonify(auth_info)

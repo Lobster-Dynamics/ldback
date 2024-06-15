@@ -66,10 +66,17 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.api.env
 
 env/
 venv/
 __pycache__/
-
+.pytest_cache/
 cert/
 cert/*
+
+# vscode settings
+.vscode/
+
+# test output 
+report.html

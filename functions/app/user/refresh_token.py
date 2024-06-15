@@ -11,8 +11,9 @@ from . import user_blueprint
 @user_blueprint.route("/refresh-token", methods=["POST"])
 @exclude_verify_token
 def refresh_token_handle():
-    data = request.get_json()
-    if not data:
+    try:
+        data = request.get_json()
+    except Exception:
         return jsonify(msg=f"Refresh token must be set"), 400
 
     refresh_token: str

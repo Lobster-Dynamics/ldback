@@ -38,7 +38,6 @@
       "type": "string"
     },
     "ownerId": {
-      "format": "uuid",
       "title": "Ownerid",
       "type": "string"
     },
